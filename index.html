@@ -1633,7 +1633,9 @@
          the sections top to bottom and stops at the first one below its probe. -->
         <!-- Self-hosted video, embedded the way the RETVI page
          (graphics.csie.ncku.edu.tw/RETVI) shows its results: a plain
-         <video autoplay controls muted loop> with a caption underneath.
+         <video autoplay controls loop> with a caption underneath. Sound is on:
+         js/page-utils.js plays it unmuted, and falls back to muted until the
+         first click/key/touch if the browser refuses.
          File lives at assets/live-demo.mp4. -->
         <section id="live-demo" class="container section spotlight spotlight--soft">
           <h2>Live Demo</h2>
@@ -1641,7 +1643,6 @@
             <video
               class="demo-video"
               controls
-              muted
               loop
               playsinline
               preload="metadata"

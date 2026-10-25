@@ -108,6 +108,22 @@
   if (demo && "IntersectionObserver" in window && !reduceMotion.matches) {
     let userPaused = false;
     let autoPausing = false;
+    let autoMuted = false;
+
+    // Gestures on the video itself are the reader using its controls (the
+    // mute button included), so they are left alone.
+    const unmuteOnGesture = (e) => {
+      if (!autoMuted || e.target === demo) return;
+      autoMuted = false;
+      demo.muted = false;
+    };
+    ["pointerdown", "keydown", "touchend"].forEach((type) =>
+      document.addEventListener(type, unmuteOnGesture, { passive: true })
+    );
+    // The reader changed the volume themselves: stop managing it.
+    demo.addEventListener("volumechange", () => {
+      if (!demo.muted) autoMuted = false;
+    });
 
     demo.addEventListener("pause", () => {
       if (autoPausing) autoPausing = false;
@@ -122,9 +138,15 @@
         const visible = entries[0].isIntersecting;
         if (visible) {
           if (userPaused) return;
-          // play() rejects if the browser refuses autoplay; the controls
-          // are still there, so there is nothing else to do about it.
-          demo.play().catch(() => {});
+          // Sound on. Browsers refuse unmuted autoplay until the reader has
+          // interacted with the page, so on rejection start muted instead
+          // and unmute at the first gesture (below). If even muted play()
+          // is refused, the controls are still there.
+          demo.play().catch(() => {
+            autoMuted = true;
+            demo.muted = true;
+            demo.play().catch(() => {});
+          });
         } else if (!demo.paused) {
           autoPausing = true;
           demo.pause();
