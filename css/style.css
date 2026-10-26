@@ -1796,6 +1796,14 @@ html.lightbox-open {
 
 /* The architecture text links to its figure; clear the sticky nav on the jump
    the same way .section headings do. */
-#fig-framework {
+#fig-framework,
+#fig-loss {
   scroll-margin-top: 3.75rem;
+}
+
+/* The loss diagram is a few shapes and labels; at the full column width it
+   would tower over the text around it. */
+.figure--narrow {
+  max-width: 480px;
+  margin-inline: auto;
 }

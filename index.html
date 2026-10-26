@@ -236,13 +236,13 @@
         <section id="system-architecture" class="container section">
           <h2>System Architecture</h2>
           <figure id="fig-framework" class="figure">
-            <!-- Inline copy is an 1800 px WebP (~130 KB); the 6403 px original
+            <!-- Inline copy is an 1800 px WebP (~115 KB); the 6368 px original
              (1.5 MB) only loads when the reader opens it in the lightbox,
              where the small labels in the diagram become legible. -->
             <img
               src="./assets/framework.webp"
               width="1800"
-              height="704"
+              height="694"
               loading="lazy"
               decoding="async"
               data-lightbox="framework"
@@ -265,6 +265,30 @@
             restoration is permitted and where rain may be reintroduced by the
             reverse mapping.
           </p>
+          <p>
+            Training also constrains the two domains in feature space
+            (<a href="#fig-loss">Figure&nbsp;2</a>). In each cycle, the
+            reconstruction of an image acts as an anchor that is pulled toward
+            its real counterpart, while both are pushed away from the image
+            translated into the other domain.
+          </p>
+          <figure id="fig-loss" class="figure figure--narrow">
+            <!-- Simple diagram with large labels: a 960 px WebP (~28 KB) is
+             sharp at this width, so there is no full-size lightbox copy. -->
+            <img
+              src="./assets/visualize_loss.webp"
+              width="960"
+              height="546"
+              loading="lazy"
+              decoding="async"
+              alt="Real, cycle-reconstructed (anchor) and translated samples in the rain and clean domains, with pull and push relations between them"
+            />
+            <figcaption>
+              Figure 2: Visualization of the loss. In each domain the cycle
+              reconstruction (anchor) is pulled toward the real image and pushed
+              away from the translated image.
+            </figcaption>
+          </figure>
         </section>
 
         <!-- Four-up qualitative comparison, scene 387. The auto-sweeping head-to-head
