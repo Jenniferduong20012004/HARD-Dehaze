@@ -143,8 +143,19 @@ main p a:not(.btn):hover {
    (Video, Live Demo, Code) sit behind a divider with an icon and an outlined
    look so the two groups read apart. */
 .tabs-nav {
-  /* The light-grey banding the tabs sit in, matching CodeFormer's header. */
+  /* The light-grey banding the tabs sit in, matching CodeFormer's header,
+     made translucent and frosted so the drifting smoke and the content
+     scrolling underneath show through it softly. Where backdrop-filter is
+     unsupported the second declaration is skipped and it stays the opaque
+     grey it always was. */
   background: linear-gradient(to bottom, #ececec, #e2e2e2);
+  background: linear-gradient(
+    to bottom,
+    rgba(240, 242, 244, 0.78),
+    rgba(226, 229, 232, 0.72)
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.5);
   padding-block: 0.4rem;
   /* Pins the jump-links to the top of the viewport once the page scrolls
      past them. Stays within .page-shell's own box, which deliberately has no
@@ -727,7 +738,11 @@ figcaption {
   aspect-ratio: 1 / 1;
   object-fit: cover;
   cursor: zoom-in;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.25s ease,
+    filter 0.25s ease;
 }
 
 .qual-item img:hover,
@@ -1827,4 +1842,185 @@ html.lightbox-open {
 .figure--narrow {
   max-width: 480px;
   margin-inline: auto;
+}
+
+/* ── Polish effects (js/effects.js and the rules below) ──────────────────── */
+
+/* 1. Scroll progress: a thin accent line along the top edge, scaled by
+   js/effects.js. Above everything (the sticky nav is z-index 20), and inert. */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 1000;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--accent), #5fb3e0);
+  box-shadow: 0 0 8px rgba(0, 98, 155, 0.45);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* 2. "Haze clears" scroll reveal: out of a blur, like a dehazed image
+   sharpening. js/effects.js adds .reveal (hidden) then .is-visible, and takes
+   both away again once settled. Never present without JavaScript. */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(9px);
+  transition:
+    opacity 0.85s ease,
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.95s ease;
+  will-change: opacity, transform, filter;
+}
+
+.reveal--soft {
+  filter: none;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* 3. Banner intro: each frame starts under a veil of haze (washed out, low
+   contrast, a little blurred) and clears in turn, left to right, following
+   Input -> Cluster -> Route -> Dehaze. Pure CSS, plays once on load. */
+@keyframes haze-clear {
+  from {
+    filter: blur(7px) brightness(2.1) contrast(0.4) saturate(0.25);
+  }
+  to {
+    filter: none;
+  }
+}
+
+@keyframes haze-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.banner-step:nth-child(1) {
+  --i: 0;
+}
+.banner-step:nth-child(2) {
+  --i: 1;
+}
+.banner-step:nth-child(3) {
+  --i: 2;
+}
+.banner-step:nth-child(4) {
+  --i: 3;
+}
+
+.banner-sub:nth-child(2) img {
+  --j: 1;
+}
+.banner-sub:nth-child(3) img {
+  --j: 2;
+}
+
+.banner-step__frame img,
+.banner-sub img {
+  animation: haze-clear 1.5s ease-out both;
+  animation-delay: calc(0.15s + var(--i, 0) * 0.5s + var(--j, 0) * 0.15s);
+}
+
+/* Chevrons and labels arrive just behind the frame they belong to. */
+.banner-step + .banner-step .banner-step__frame::before,
+.banner-step__caption,
+.banner-step__verb {
+  animation: haze-fade-in 0.7s ease-out both;
+  animation-delay: calc(0.55s + var(--i, 0) * 0.5s);
+}
+
+.banner-caption {
+  animation: haze-fade-in 0.9s ease-out both;
+  animation-delay: 2.3s;
+}
+
+/* 4. Hover: figures and banner frames lift, with a soft accent glow. */
+.figure img,
+.banner-step__frame:not(.banner-step__frame--group) img,
+.banner-sub img {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.figure img:hover,
+.banner-step__frame:not(.banner-step__frame--group) img:hover,
+.banner-sub img:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px -12px rgba(0, 98, 155, 0.45);
+}
+
+.figure img:hover {
+  border-color: rgba(0, 98, 155, 0.45);
+}
+
+/* Table rows light up under the pointer. */
+.results-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.results-table tbody tr:hover td {
+  background: rgba(0, 98, 155, 0.08);
+}
+
+/* Comparison grid: the row under the pointer stays sharp and lifted, the
+   others step back, so one scene can be followed across eleven columns.
+   (.is-hot / .has-hot are set by js/effects.js; the rows are display:
+   contents, so the effect lives on their images.) */
+.qual-grid.has-hot .qual-row:not(.is-hot) .qual-item img {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+
+.qual-row.is-hot .qual-item img {
+  box-shadow: 0 4px 14px -4px rgba(0, 98, 155, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #scroll-progress {
+    will-change: auto;
+  }
+
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .banner-step__frame img,
+  .banner-sub img,
+  .banner-step + .banner-step .banner-step__frame::before,
+  .banner-step__caption,
+  .banner-step__verb,
+  .banner-caption {
+    animation: none;
+  }
+
+  .figure img,
+  .banner-step__frame img,
+  .banner-sub img {
+    transition: none;
+  }
+
+  .figure img:hover,
+  .banner-step__frame:not(.banner-step__frame--group) img:hover,
+  .banner-sub img:hover {
+    transform: none;
+  }
 }

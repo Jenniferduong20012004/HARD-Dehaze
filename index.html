@@ -8,7 +8,7 @@
       name="description"
       content="HARD-Dehaze — Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing — project page."
     />
-    <link rel="stylesheet" href="./css/style.css?v=53" />
+    <link rel="stylesheet" href="./css/style.css?v=55" />
     <!-- Optional: uncomment after acceptance
   <meta property="og:title" content="HARD-Dehaze: Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing">
   <meta property="og:description" content="A hardness-aware framework that clusters hazy remote sensing images by degradation, scores each cluster, and spends training on the clusters the model handles worst.">
@@ -274,15 +274,19 @@
             on which the model still dehazes inconsistently with new samples,
             and curtails the clusters on which haze removal is already stable.
           </p>
-          <figure id="fig-active" class="figure figure--narrow">
-            <!-- Simple diagram with large labels: a 1337 px WebP (~63 KB) is
-             sharp at this width, so there is no full-size lightbox copy. -->
+          <figure id="fig-active" class="figure">
+            <!-- Full column width: the diagram has small step labels (H1-H7, C1-C2)
+             that need the room. A 1337 px WebP (~63 KB) stays sharp at this
+             width; the lightbox opens the same file larger. -->
             <img
               src="./assets/active-learning.webp?v=2"
               width="1337"
               height="768"
               loading="lazy"
               decoding="async"
+              data-lightbox="active-learning"
+              data-full="./assets/active-learning.webp?v=2"
+              data-caption="Overview of the degradation-aware active training strategy."
               alt="The degradation-aware active training strategy: hazy images are embedded and clustered, each cluster is scored, and new samples are allocated to the lowest-scoring clusters"
             />
             <figcaption>
@@ -319,7 +323,7 @@
           </p>
         </section>
 
-        <!-- Four-up qualitative comparison, scene 387. The auto-sweeping head-to-head
+        <!-- Four-up qualitative comparison. The auto-sweeping head-to-head
          that used to sit here moved into the Interactive Demo, where it now
          earns its keep as the affordance hint for the draggable sliders. -->
         <section id="result-demonstration" class="container section">
@@ -362,12 +366,12 @@
               <figure class="zoom-item">
                 <div class="zoom-tile">
                   <img
-                    src="./assets/loupe/i387.png"
+                    src="./assets/loupe/input.png?v=2"
                     width="256"
                     height="256"
                     loading="lazy"
                     decoding="async"
-                    alt="Hazy input (scene 387)"
+                    alt="Hazy input"
                   />
                 </div>
                 <figcaption>Input</figcaption>
@@ -375,12 +379,12 @@
               <figure class="zoom-item">
                 <div class="zoom-tile">
                   <img
-                    src="./assets/loupe/op387.png"
+                    src="./assets/loupe/gt.png?v=2"
                     width="256"
                     height="256"
                     loading="lazy"
                     decoding="async"
-                    alt="Ground truth, haze-free reference (scene 387)"
+                    alt="Ground truth, haze-free reference"
                   />
                 </div>
                 <figcaption>Ground truth</figcaption>
@@ -388,12 +392,12 @@
               <figure class="zoom-fig--sota zoom-item">
                 <div class="zoom-tile">
                   <img
-                    src="./assets/loupe/c387.png"
+                    src="./assets/loupe/ubrfc.png?v=2"
                     width="256"
                     height="256"
                     loading="lazy"
                     decoding="async"
-                    alt="SOTA (UBRFC-Net) dehazing result (scene 387)"
+                    alt="SOTA (UBRFC-Net) dehazing result"
                   />
                 </div>
                 <figcaption>SOTA</figcaption>
@@ -401,12 +405,12 @@
               <figure class="zoom-fig--ours zoom-item">
                 <div class="zoom-tile">
                   <img
-                    src="./assets/loupe/o387.png"
+                    src="./assets/loupe/our.png?v=2"
                     width="256"
                     height="256"
                     loading="lazy"
                     decoding="async"
-                    alt="Our dehazing result (scene 387)"
+                    alt="Our dehazing result"
                   />
                 </div>
                 <figcaption>Ours</figcaption>
@@ -2223,6 +2227,7 @@
     <script src="./js/compare-slider.js"></script>
     <script src="./js/loupe-row.js"></script>
     <script src="./js/smoke-bg.js?v=3"></script>
+    <script src="./js/effects.js"></script>
     <script src="./js/scroll-spy.js"></script>
     <script src="./js/lightbox.js?v=2"></script>
     <script src="./js/page-utils.js?v=8"></script>
