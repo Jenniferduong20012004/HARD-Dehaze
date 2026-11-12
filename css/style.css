@@ -614,11 +614,9 @@ figcaption {
 }
 
 .table-card {
-  width: fit-content;
   max-width: 100%;
   margin: 0 auto 1rem;
   padding: 1.25rem;
-  overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -629,14 +627,41 @@ figcaption {
   border-collapse: collapse;
   font-size: 0.9rem;
   margin: 0 auto;
+  width: 100%;
 }
 
 .results-table th,
 .results-table td {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.6rem;
   text-align: center;
   white-space: nowrap;
   border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 767px) {
+  .table-card {
+    padding: 0.5rem;
+  }
+
+  .results-table {
+    font-size: 0.72rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.3rem 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-table {
+    font-size: 0.65rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.25rem 0.15rem;
+  }
 }
 
 .results-table th:first-child,
