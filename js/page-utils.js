@@ -7,7 +7,7 @@
  *     on page load, so it begins at the start for whoever reaches it.
  *   - Spotlights: while the Video section (softly, Live Demo) sits in the
  *     middle of the viewport, the page behind the panel darkens and shows
- *     through the panel behind that section, rain included.
+ *     through the panel behind that section, smoke included.
  */
 (function () {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -170,7 +170,7 @@
      video reaches the centre and come back up as the reader moves on.
      While lit, the page background behind the panel changes colour (a
      class on <html>), and the panel's white fades out behind the section,
-     so the section shows the page itself, rain and all: .page-shell is
+     so the section shows the page itself, smoke and all: .page-shell is
      painted as a vertical gradient of its own colour with one band per
      spotlight, and each band's colour goes to transparent while lit.
      Without IntersectionObserver the sections just stay as they are. */

@@ -4,7 +4,7 @@
  * Hovering anywhere over any tile in a .zoom-row puts a lens on *every* tile
  * in that row, all at the same normalised point. That is the comparison a
  * four-way figure (Input / GT / CSUD / Ours) is actually for: the reader picks
- * one streak and sees what each method did to it, instead of eyeballing four
+ * one hazy region and sees what each method did to it, instead of eyeballing four
  * thumbnails and trying to hold a crop in memory.
  *
  * Zoom is otherwise an invisible feature -- nothing in a still row of images

@@ -1,6 +1,6 @@
 /**
  * Draggable before/after image comparison slider.
- * Left side of handle = derained (clean), right side = rainy input.
+ * Left side of handle = dehazed (clean), right side = hazy input.
  *
  * Add data-auto="true" to a .compare element to make it sweep back and
  * forth on its own (a "GIF-like" auto slider). It pauses while the pointer
@@ -156,10 +156,10 @@
 
   /**
    * Hover magnifier. A circular lens follows the pointer and shows the same
-   * region at 2x -- still split by the handle, so the derained result and the
-   * rainy input are read side by side at the *same* pixel rather than from
-   * memory. That is the comparison a deraining reviewer actually needs:
-   * residual streaks and over-smoothed texture only show up magnified.
+   * region at 2x -- still split by the handle, so the dehazed result and the
+   * hazy input are read side by side at the *same* pixel rather than from
+   * memory. That is the comparison a dehazing reviewer actually needs:
+   * residual haze and washed-out texture only show up magnified.
    *
    * getPosition() is the live handle position, not compare.dataset.position:
    * the auto sweep deliberately never writes that attribute.
@@ -189,7 +189,7 @@
     lens.style.width = size + "px";
     lens.style.height = size + "px";
 
-    // Bottom layer: the rainy input, filling the whole lens.
+    // Bottom layer: the hazy input, filling the whole lens.
     const under = document.createElement("div");
     under.className = "compare__loupe-layer";
     under.style.backgroundImage = 'url("' + baseImg.src + '")';
@@ -287,7 +287,7 @@
      * Uses the fractional rect width, not offsetWidth: grid tracks are often
      * fractional (a 3-up row of 1fr lands on ~276.67px) and rounding to an
      * integer scales the two layers differently, which shows up as a seam
-     * along the handle — exactly the artefact a deraining comparison must not
+     * along the handle — exactly the artefact a dehazing comparison must not
      * introduce.
      */
     const syncOverlayWidth = () => {

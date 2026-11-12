@@ -36,27 +36,32 @@ body {
   background: var(--bg);
 }
 
-/* Ambient rain layer (js/rain-bg.js): fixed behind everything, so it only
-   shows through the transparent gaps between opaque sections/cards -- same
-   trick the CodeFormer project page uses for its particle-network layer. */
-#rain-bg {
+/* Ambient smoke layer (js/smoke-bg.js): fixed to the viewport and drawn
+   *inside* .page-shell's stacking context (see .page-shell below), at
+   z-index -1: above the panel's own white background, below every piece of
+   text and every image. So the smoke drifts across the whole page behind the
+   content, not just in the margins. It only reacts to the pointer through
+   window listeners, so it never intercepts a click. */
+#smoke-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
-/* Opaque page panel wrapping header+main+footer: with the rain canvas fixed
-   behind everything at z-index -1, this hides the rain everywhere inside the
-   panel (including the gaps between sections) so it only reads through on
-   the two sides. Capped with a floor so it never squeezes narrower than the
+/* Opaque page panel wrapping header+main+footer. The smoke canvas is a child
+   of it, so the smoke is painted over this white and under the content.
+   Capped with a floor so it never squeezes narrower than the
    900px content column plus breathing room -- the grids below (.zoom-row,
    .compare-grid--results) key their breakpoints to the viewport width, so
    the column they render into must stay exactly as wide as it always was.
    Below that floor there's no room for side margins anyway, so the panel
    just quietly becomes full width. */
 .page-shell {
+  /* Own stacking context: lets #smoke-bg (z-index -1, a child of the shell)
+     paint above the shell's background but under its content. */
+  isolation: isolate;
   max-width: max(70vw, calc(var(--max-width) + 6rem));
   margin-inline: auto;
   /* Floats the panel off the viewport edge on every side, like the side
@@ -118,7 +123,9 @@ main p a:not(.btn):hover {
 }
 
 .hero {
-  background: var(--surface);
+  /* Transparent so the smoke shows behind the title too; .page-shell already
+     paints the same white behind it. */
+  background: transparent;
   padding: 2.5rem 0 1.25rem;
   text-align: center;
   /* Matches .page-shell's own 16px so the top corners still read as rounded
@@ -427,7 +434,7 @@ h2 {
 
 /* The light sibling of the Video spotlight below: while the clip plays
    (js/page-utils.js sets .is-playing), it lifts off the page a little and
-   settles back when paused. No backdrop and no rain, so the two adjacent
+   settles back when paused. No backdrop and no smoke, so the two adjacent
    sections don't repeat the same moment and the UI text in the recording
    stays easy to read. */
 .demo-video.is-playing {
@@ -467,14 +474,14 @@ h2 {
    and nothing happens on touch screens. Here js/page-utils.js adds .is-lit
    while the section crosses the middle of the viewport, and only paint and
    transform change, so nothing around it moves.
-   While lit, the page behind the panel turns a storm colour and the panel's
+   While lit, the page behind the panel turns a haze colour and the panel's
    white fades out behind the section (page-utils.js paints .page-shell's
    background as white with one see-through band per spotlight), so the
    section is a window onto the page itself: the very same background and
-   the very same rain from js/rain-bg.js, panel edge to panel edge. */
+   the very same smoke from js/smoke-bg.js, panel edge to panel edge. */
 :root {
-  --storm-bg: #0c1724;
-  --storm-bg-soft: #d2d7dd;
+  --haze-bg: #0c1724;
+  --haze-bg-soft: #d2d7dd;
 }
 
 .spotlight {
@@ -523,9 +530,9 @@ h2 {
 }
 
 /* .spotlight--soft (Live Demo): the same window at low strength, so the
-   page eases into the Video section's storm instead of repeating it. A pale
-   storm grey instead of navy, against which the light rain only faintly
-   shows, and the heading stays dark. */
+   page eases into the Video section's haze instead of repeating it. A pale
+   haze grey instead of navy, against which the smoke is darkened to show,
+   and the heading stays dark. */
 .spotlight--soft.is-lit h2 {
   color: inherit;
   border-bottom-color: var(--border);
@@ -539,27 +546,27 @@ body {
 }
 
 .spotlight-soft-on body {
-  background-color: var(--storm-bg-soft);
+  background-color: var(--haze-bg-soft);
 }
 
-/* The rain's light grey (#c4c8cc in js/rain-bg.js) sits too close to the
-   pale storm grey to read, so it is brightened to near white, and a little
-   stronger, while the soft spotlight is on. */
-#rain-bg {
+/* The smoke's light grey (rgb 122,132,145 in js/smoke-bg.js) sits too close
+   to the pale haze grey to read, so it is darkened, and a little stronger,
+   while the soft spotlight is on. */
+#smoke-bg {
   transition:
     filter 0.6s ease,
     opacity 0.6s ease;
 }
 
-.spotlight-soft-on #rain-bg {
-  filter: brightness(1.3);
-  opacity: 0.85;
+.spotlight-soft-on #smoke-bg {
+  filter: brightness(0.6);
+  opacity: 0.9;
 }
 
 /* After the soft rule, so it wins while both are briefly on at the
    boundary between the two sections. */
 .spotlight-on body {
-  background-color: var(--storm-bg);
+  background-color: var(--haze-bg);
 }
 
 /* Reduced motion: the colours still change, instantly, with no zoom (the
@@ -569,7 +576,7 @@ body {
   .spotlight h2,
   .spotlight .media-box,
   body,
-  #rain-bg {
+  #smoke-bg {
     transition: none;
   }
 
@@ -664,20 +671,34 @@ figcaption {
   background: rgba(31, 102, 180, 0.07);
 }
 
+/* Per-cell variant for tables where the best value differs by column. */
+.results-table td.is-best {
+  color: #d62728;
+  font-weight: 700;
+}
+
+.results-table td.is-second {
+  color: #1f66b4;
+  font-weight: 600;
+}
+
 /* ── Qualitative comparison grid (Input / GT / baselines / Ours) ──
-   One row per scene, seven methods wide, column labels given once in a head
-   row rather than per tile. Columns are fluid (1fr each) so all seven tiles
-   always fit the container width by shrinking together, rather than
-   triggering a horizontal scrollbar. */
+   One row per scene, eleven columns wide (Input, GT, eight baselines, Ours),
+   column labels given once in a head row rather than per tile. Eleven tiles
+   do not stay legible squeezed into the 900px column, so each column has a
+   floor and .qual-scroll scrolls sideways when the container is narrower
+   than the grid. */
 
 .qual-scroll {
   margin-bottom: 1rem;
+  overflow-x: auto;
 }
 
 .qual-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(11, minmax(88px, 1fr));
   gap: 0.4rem;
+  min-width: 1020px;
 }
 
 /* display:contents makes the head/row wrapper invisible to layout, so its
@@ -690,7 +711,7 @@ figcaption {
 
 .qual-head span {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 600;
   text-align: center;
   padding-bottom: 0.35rem;
@@ -1340,7 +1361,7 @@ html.lightbox-open {
 /* ── Four-up row with a synced magnifier (Input / GT / CSUD / Ours) ──
    A separate component from .compare: these are plain images, not sliders.
    Driven by js/loupe-row.js. Hovering any tile lenses all of them at the same
-   normalised point, so one streak can be followed across all four methods. */
+   normalised point, so one hazy region can be followed across all four methods. */
 
 .zoom-row {
   display: grid;
@@ -1503,9 +1524,9 @@ html.lightbox-open {
 }
 
 /* ── Banner (first thing under the title) ──
-   Four beats in a row -- rainy input, then the title's three verbs -- with
+   Four beats in a row -- hazy input, then Cluster, Route and Dehaze -- with
    chevrons between them, so the reader gets the claim without reading a
-   sentence. Detect spends three frames against everyone else's one, which is
+   sentence. Cluster spends three frames against everyone else's one, which is
    what the 1fr/3fr/1fr/1fr track list buys: its sub-frames then come out the
    same size as the single frames beside them, and the row keeps one
    horizon. */
@@ -1537,7 +1558,7 @@ html.lightbox-open {
   border-radius: 6px;
 }
 
-/* Detect's frame is a rail for three, so it hands the border, fill and
+/* Cluster's frame is a rail for three, so it hands the border, fill and
    square to the sub-frames and keeps only the position the chevron needs. */
 .banner-step__frame--group {
   display: grid;
@@ -1560,7 +1581,7 @@ html.lightbox-open {
    single frames beside them, and every verb under the row keeps its
    baseline. The 7px outset clears the frames without reaching the chevrons,
    which sit 11px further out in the 2rem gap. Colour is --accent at 45%,
-   tying the ring to the DETECT label under it. */
+   tying the ring to the CLUSTER label under it. */
 .banner-subs::after {
   content: "";
   position: absolute;
@@ -1609,9 +1630,9 @@ html.lightbox-open {
   transform: rotate(45deg);
 }
 
-/* The Detect ring reaches 9px into the gaps on both sides of it, so the free
+/* The Cluster ring reaches 9px into the gaps on both sides of it, so the free
    space there is 23px, not 32px, and its midpoint moves away from the ring:
-   left of Detect it sits further left, right of Detect further right. */
+   left of Cluster it sits further left, right of Cluster further right. */
 .banner-step + .banner-step--detect .banner-step__frame::before {
   margin-left: -14px;
 }
@@ -1620,7 +1641,7 @@ html.lightbox-open {
   margin-left: -7px;
 }
 
-/* Last in the tile, so the four accented words sit on one baseline and the
+/* Last in the tile, so the four labels sit on one baseline and the
    row can be read off without touching the grey captions above them. */
 .banner-step__verb {
   margin: 0.15rem 0 0;
@@ -1633,7 +1654,7 @@ html.lightbox-open {
 }
 
 /* The input is not one of the three verbs, so it is labelled but not
-   accented -- the colour is what makes Detect/Restore/Compose scannable. */
+   accented -- the colour is what makes Cluster/Route/Dehaze scannable. */
 .banner-step__verb--plain {
   color: var(--muted);
   font-weight: 600;
@@ -1654,7 +1675,7 @@ html.lightbox-open {
   color: var(--muted);
 }
 
-/* Detect's caption rides the same three tracks as its frames, so each name
+/* Cluster's caption rides the same three tracks as its frames, so each name
    lands under the frame it belongs to. */
 .banner-step__caption--split {
   display: grid;
@@ -1687,8 +1708,8 @@ html.lightbox-open {
 /* Phones and narrow tablets: two columns. Reading order is still the flow
    order, so the verbs keep carrying the sequence and the chevrons -- which
    would now point across a wrap -- go. Detect keeps all three frames rather
-   than dropping two: they are small here, but a diagonal ridge and a streak
-   map read as patterns at any size, and losing them would leave the busiest
+   than dropping two: they are small here, but a cluster scatter and a score
+   chart read as patterns at any size, and losing them would leave the busiest
    stage looking like the simplest. */
 @media (max-width: 700px) {
   .banner-flow {
