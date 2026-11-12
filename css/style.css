@@ -724,14 +724,12 @@ figcaption {
 
 .qual-scroll {
   margin-bottom: 1rem;
-  overflow-x: auto;
 }
 
 .qual-grid {
   display: grid;
-  grid-template-columns: repeat(11, minmax(88px, 1fr));
+  grid-template-columns: repeat(11, 1fr);
   gap: 0.4rem;
-  min-width: 1020px;
 }
 
 /* display:contents makes the head/row wrapper invisible to layout, so its
