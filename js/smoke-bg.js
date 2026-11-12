@@ -202,20 +202,23 @@
     // thins around the pointer rather than popping.
     const ease = Math.min(1, dt * 5);
 
-    for (let i = 0; i < puffs.length; i++) {
+    var baseCount = Math.max(MIN_COUNT, Math.round(width * height * DENSITY));
+    for (let i = puffs.length - 1; i >= 0; i--) {
       const p = puffs[i];
       step(p, dt);
       const target = closeness(p);
       p.hl += (target - p.hl) * ease;
       if (p.hl > 0.01) {
-        // Part around the pointer, as smoke does when a hand moves through it.
         const dx = p.x - pointer.x;
         const dy = p.y - pointer.y;
         const d = Math.hypot(dx, dy) || 1;
         p.x += (dx / d) * p.hl * HOVER_PUSH * dt;
         p.y += (dy / d) * p.hl * HOVER_PUSH * dt;
       }
-      if (p.age >= p.life) puffs[i] = makePuff(false);
+      if (p.age >= p.life) {
+        if (i < baseCount) puffs[i] = makePuff(false);
+        else puffs.splice(i, 1);
+      }
     }
 
     for (let i = trail.length - 1; i >= 0; i--) {
@@ -297,6 +300,47 @@
 
   if (typeof reduceMotion.addEventListener === "function") {
     reduceMotion.addEventListener("change", sync);
+  }
+
+  /* ── Spotlight boost: spawn extra puffs when Live Demo is in view ── */
+  var boostActive = false;
+  var boostTimer = null;
+  var BOOST_INTERVAL = 220;
+  var BOOST_EXTRA = 5;
+
+  function spawnBoostPuffs() {
+    if (!boostActive) return;
+    for (var b = 0; b < BOOST_EXTRA; b++) {
+      var p = makePuff(false);
+      p.peak = rand(0.5, 0.85) * PEAK_ALPHA;
+      p.radius = rand(MIN_RADIUS * 0.7, MAX_RADIUS * 1.2);
+      p.x = rand(0, width);
+      p.y = height + p.radius * 0.3;
+      puffs.push(p);
+    }
+    boostTimer = setTimeout(spawnBoostPuffs, BOOST_INTERVAL);
+  }
+
+  function startBoost() {
+    if (boostActive) return;
+    boostActive = true;
+    spawnBoostPuffs();
+  }
+
+  function stopBoost() {
+    boostActive = false;
+    if (boostTimer) { clearTimeout(boostTimer); boostTimer = null; }
+  }
+
+  var demoSection = document.getElementById("live-demo");
+  if (demoSection && "IntersectionObserver" in window) {
+    new IntersectionObserver(
+      function (entries) {
+        if (entries[0].isIntersecting) startBoost();
+        else stopBoost();
+      },
+      { rootMargin: "-20% 0px -20% 0px" }
+    ).observe(demoSection);
   }
 
   resize();

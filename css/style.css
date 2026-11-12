@@ -560,18 +560,15 @@ body {
   background-color: var(--haze-bg-soft);
 }
 
-/* The smoke's light grey (rgb 122,132,145 in js/smoke-bg.js) sits too close
-   to the pale haze grey to read, so it is darkened, and a little stronger,
-   while the soft spotlight is on. */
+/* While the soft spotlight (Live Demo) is on, the smoke layer gets denser
+   instead of darker: js/smoke-bg.js spawns extra puffs and the canvas
+   opacity rises so the added smoke is visible. */
 #smoke-bg {
-  transition:
-    filter 0.6s ease,
-    opacity 0.6s ease;
+  transition: opacity 0.6s ease;
 }
 
 .spotlight-soft-on #smoke-bg {
-  filter: brightness(0.6);
-  opacity: 0.9;
+  opacity: 1;
 }
 
 /* After the soft rule, so it wins while both are briefly on at the
