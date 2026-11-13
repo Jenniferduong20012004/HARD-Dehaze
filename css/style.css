@@ -1,0 +1,2058 @@
+html {
+  /* Nav-link clicks (.tabs-nav -> #section) and any other same-page #anchor
+     jump animate instead of snapping. Turned off below for users who've
+     asked their OS for reduced motion. */
+  scroll-behavior: smooth;
+}
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --muted: #5c5c5c;
+  --accent: #00629b;
+  --border: #e0e0e0;
+  --radius: 8px;
+  --max-width: 900px;
+  /* Shared by every result tile on the page. The Qualitative Comparison row is
+     4-up and defines the tile size; the Interactive Demo is 3-up and is capped
+     to render the same size, so both grids must agree on the gap. */
+  --tile-gap: 0.75rem;
+  --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* Ambient smoke layer (js/smoke-bg.js): fixed to the viewport and drawn
+   *inside* .page-shell's stacking context (see .page-shell below), at
+   z-index -1: above the panel's own white background, below every piece of
+   text and every image. So the smoke drifts across the whole page behind the
+   content, not just in the margins. It only reacts to the pointer through
+   window listeners, so it never intercepts a click. */
+#smoke-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Opaque page panel wrapping header+main+footer. The smoke canvas is a child
+   of it, so the smoke is painted over this white and under the content.
+   Capped with a floor so it never squeezes narrower than the
+   900px content column plus breathing room -- the grids below (.zoom-row,
+   .compare-grid--results) key their breakpoints to the viewport width, so
+   the column they render into must stay exactly as wide as it always was.
+   Below that floor there's no room for side margins anyway, so the panel
+   just quietly becomes full width. */
+.page-shell {
+  /* Own stacking context: lets #smoke-bg (z-index -1, a child of the shell)
+     paint above the shell's background but under its content. */
+  isolation: isolate;
+  max-width: max(70vw, calc(var(--max-width) + 6rem));
+  margin-inline: auto;
+  /* Floats the panel off the viewport edge on every side, like the side
+     margins it already has, so the top reads the same as the left/right. */
+  margin-block: clamp(1.25rem, 3vw, 2.5rem);
+  background: var(--surface);
+  border-radius: 16px;
+  /* No overflow: hidden here (used to clip .hero's square corners to the
+     panel's rounded ones) -- it also silently breaks position: sticky on
+     any descendant, in every browser, even though this panel never scrolls
+     on its own. .hero carries its own matching top radius instead (below),
+     so the corners still read as rounded without an overflow-hidden
+     ancestor in the way of .tabs-nav's sticky nav. */
+  box-shadow:
+    0 24px 48px -16px rgba(0, 0, 0, 0.22),
+    0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Links inside running text are underlined, not just colored: color alone
+   doesn't tell a link apart for color-blind readers or in grayscale (axe:
+   link-in-text-block). Buttons and the nav keep their own styling. */
+main p a:not(.btn) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+main p a:not(.btn):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Wording that depends on the input device ("hover" vs "tap"). */
+.only-touch {
+  display: none;
+}
+
+@media (hover: none) {
+  .only-hover {
+    display: none;
+  }
+
+  .only-touch {
+    display: inline;
+  }
+}
+
+.container {
+  width: min(100% - 2rem, var(--max-width));
+  margin-inline: auto;
+}
+
+.hero {
+  /* Transparent so the smoke shows behind the title too; .page-shell already
+     paints the same white behind it. */
+  background: transparent;
+  padding: 2.5rem 0 1.25rem;
+  text-align: center;
+  /* Matches .page-shell's own 16px so the top corners still read as rounded
+     now that .page-shell no longer clips its children to that shape. */
+  border-radius: 16px 16px 0 0;
+}
+
+/* Section jump-links: one row of slanted tabs (shape borrowed from
+   CodeFormer's #tabs), pinned to the top of the viewport.
+   The row never wraps -- eight tabs wrapping onto two (desktop) or four
+   (phone) lines made the sticky bar eat up to a third of a phone screen.
+   Instead labels are short, padding is tight, and when the row still doesn't
+   fit it scrolls sideways, with edge fades (toggled by js/scroll-spy.js) to
+   show there is more. Paper sections come first; the media/resource tabs
+   (Video, Live Demo, Code) sit behind a divider with an icon and an outlined
+   look so the two groups read apart. */
+.tabs-nav {
+  /* The light-grey banding the tabs sit in, matching CodeFormer's header,
+     made translucent and frosted so the drifting smoke and the content
+     scrolling underneath show through it softly. Where backdrop-filter is
+     unsupported the second declaration is skipped and it stays the opaque
+     grey it always was. */
+  background: linear-gradient(to bottom, #ececec, #e2e2e2);
+  background: linear-gradient(
+    to bottom,
+    rgba(240, 242, 244, 0.78),
+    rgba(226, 229, 232, 0.72)
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  backdrop-filter: blur(12px) saturate(1.5);
+  padding-block: 0.4rem;
+  /* Pins the jump-links to the top of the viewport once the page scrolls
+     past them. Stays within .page-shell's own box, which deliberately has no
+     overflow: hidden (that would break sticky). */
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.tabs-nav ul {
+  list-style: none;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  /* Vertical room for each tab's drop shadow, which overflow-x: auto would
+     otherwise clip; horizontal room so the end tabs don't touch the edge. */
+  padding: 0.3rem 1rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-nav ul::-webkit-scrollbar {
+  display: none;
+}
+
+/* Centers the row when it fits but keeps the first tab reachable when it
+   overflows (justify-content: center would push it off the left edge). */
+.tabs-nav li:first-child {
+  margin-left: auto;
+}
+
+.tabs-nav li:last-child {
+  margin-right: auto;
+}
+
+/* Edge fades, only on the side(s) that actually have hidden tabs. */
+.tabs-nav ul.fade-left {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+  mask-image: linear-gradient(to right, transparent, #000 2.5rem);
+}
+
+.tabs-nav ul.fade-right {
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 2.5rem);
+  mask-image: linear-gradient(to left, transparent, #000 2.5rem);
+}
+
+.tabs-nav ul.fade-left.fade-right {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent);
+}
+
+.tabs-nav li {
+  flex: none;
+  /* filter (not box-shadow) so the shadow follows the clip-path outline
+     rather than the invisible rectangular box behind it. */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.tabs-nav__sep {
+  width: 1px;
+  height: 1.4rem;
+  margin-inline: 0.35rem;
+  background: #b5b9bd;
+  filter: none !important;
+}
+
+.tabs-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1.15rem 0.45rem 0.95rem;
+  background: linear-gradient(to bottom, #c2c6ca 0%, #9aa0a6 100%);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+
+/* Resource tabs: light face, accent text and icon. */
+.tabs-nav a.tabs-nav__res {
+  background: linear-gradient(to bottom, #ffffff, #e9eef2);
+  color: var(--accent);
+  text-shadow: none;
+}
+
+.tabs-nav svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+  fill: currentColor;
+}
+
+.tabs-nav a:hover,
+.tabs-nav a:focus-visible,
+.tabs-nav a.tabs-nav__res:hover,
+.tabs-nav a.tabs-nav__res:focus-visible {
+  background: linear-gradient(to bottom, #1f7fb8, var(--accent));
+  color: #fff;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+/* Current section, set by js/scroll-spy.js as the reader scrolls. Same
+   accent fill as hover, plus extra weight so it still reads as current when
+   the pointer is elsewhere. */
+.tabs-nav a.is-active,
+.tabs-nav a.tabs-nav__res.is-active {
+  background: linear-gradient(to bottom, #1f7fb8, var(--accent));
+  color: #fff;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+
+.venue {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+h2 {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.authors {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+}
+
+.affiliations {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.anonymous {
+  font-style: italic;
+  color: var(--muted);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.08);
+  color: #fff;
+}
+
+.section {
+  padding: 2rem 0;
+  /* Clears the sticky .tabs-nav (~3.1rem tall: its own padding + the list's
+     shadow room + one row of tabs) plus a little breathing room, so a
+     nav-link jump doesn't land the section's heading underneath it. */
+  scroll-margin-top: 3.75rem;
+}
+
+.section + .section {
+  border-top: 1px solid var(--border);
+}
+
+/* Body paragraphs and section captions (Abstract, System Architecture,
+   Result Demonstration, ...) are justified. The "withheld for review" notes
+   stay left-aligned. A one-line paragraph is unaffected by justify, since the
+   last line of a block is never stretched. hyphens keeps narrow viewports
+   from opening wide gaps between words. */
+.section > p:not(.anonymous) {
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Abstract: a narrower, slightly smaller column than the rest of the page.
+   At the full 900 px width a line runs ~130 characters, roughly twice a
+   comfortable reading measure; ~680 px brings it to ~90. Only the heading
+   and text narrow, not the section, so the divider above it still spans the
+   page like every other section's. */
+#abstract > h2,
+#abstract > p {
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+#abstract > p {
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+/* Keywords sit in the abstract's column, a notch quieter than the text above
+   and left-aligned: a justified list of short terms opens wide gaps. Selector
+   is #abstract-qualified to outrank the justify rule on `.section > p`. */
+#abstract > p.keywords {
+  margin-top: 0.9rem;
+  font-size: 0.82rem;
+  text-align: left;
+  color: var(--muted);
+}
+
+#abstract > p.keywords strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.caption {
+  margin: -0.5rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.media-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.media-box video,
+.media-box iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  /* Letterbox color while the video/embed is still loading. */
+  background: #000;
+}
+
+/* Live Demo: one self-hosted video with its caption, RETVI-style. Takes
+   the clip's own aspect ratio rather than a forced 16:9. */
+.demo-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.8s ease;
+}
+
+/* The light sibling of the Video spotlight below: while the clip plays
+   (js/page-utils.js sets .is-playing), it lifts off the page a little and
+   settles back when paused. No backdrop and no smoke, so the two adjacent
+   sections don't repeat the same moment and the UI text in the recording
+   stays easy to read. */
+.demo-video.is-playing {
+  box-shadow:
+    0 18px 40px -14px rgba(12, 23, 36, 0.45),
+    0 0 0 1px rgba(0, 98, 155, 0.18);
+}
+
+@media (min-width: 768px) {
+  .demo-video.is-playing {
+    transform: scale(1.025);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-video {
+    transition: none;
+  }
+
+  .demo-video.is-playing {
+    transform: none;
+  }
+}
+
+/* Live Demo / Video: just under the text width (90%), so they sit inside
+   the column rather than flush with it, while the UI text in the screen
+   recording stays legible. Phones are narrower
+   than the column anyway and keep full width. */
+.media-box--narrow {
+  max-width: 90%;
+  margin-inline: auto;
+}
+
+/* Video spotlight: the "lights go down" moment Upscale-A-Video gives its
+   demo block, reworked. Theirs is a :hover rule that turns the block black,
+   grows its padding and scales it 1.1, so the page reflows under the cursor
+   and nothing happens on touch screens. Here js/page-utils.js adds .is-lit
+   while the section crosses the middle of the viewport, and only paint and
+   transform change, so nothing around it moves.
+   While lit, the page behind the panel turns a haze colour and the panel's
+   white fades out behind the section (page-utils.js paints .page-shell's
+   background as white with one see-through band per spotlight), so the
+   section is a window onto the page itself: the very same background and
+   the very same smoke from js/smoke-bg.js, panel edge to panel edge. */
+:root {
+  --haze-bg: #0c1724;
+  --haze-bg-soft: #d2d7dd;
+}
+
+.spotlight {
+  transition: border-color 0.6s ease;
+}
+
+.spotlight h2 {
+  transition:
+    color 0.6s ease,
+    border-color 0.6s ease;
+}
+
+.spotlight .media-box {
+  transition:
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.8s ease,
+    border-color 0.6s ease;
+}
+
+.spotlight.is-lit {
+  border-top-color: transparent;
+}
+
+.spotlight.is-lit + .section {
+  border-top-color: transparent;
+}
+
+.spotlight.is-lit h2 {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.16);
+}
+
+.spotlight.is-lit .media-box {
+  border-color: transparent;
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(150, 190, 230, 0.18);
+}
+
+/* The zoom only where the 90% column leaves room for it; on a phone the
+   video is already edge to edge. */
+@media (min-width: 768px) {
+  .spotlight.is-lit .media-box {
+    transform: scale(1.04);
+  }
+}
+
+/* .spotlight--soft (Live Demo): the same window at low strength, so the
+   page eases into the Video section's haze instead of repeating it. A pale
+   haze grey instead of navy, against which the smoke is darkened to show,
+   and the heading stays dark. */
+.spotlight--soft.is-lit h2 {
+  color: inherit;
+  border-bottom-color: var(--border);
+}
+
+/* The page colour seen through the window: js/page-utils.js puts
+   .spotlight-on (.spotlight-soft-on for the soft one) on <html> while the
+   section is lit. */
+body {
+  transition: background-color 0.6s ease;
+}
+
+.spotlight-soft-on body {
+  background-color: var(--haze-bg-soft);
+}
+
+/* While the soft spotlight (Live Demo) is on, the smoke layer gets denser
+   instead of darker: js/smoke-bg.js spawns extra puffs and the canvas
+   opacity rises so the added smoke is visible. */
+#smoke-bg {
+  transition: opacity 0.6s ease;
+}
+
+.spotlight-soft-on #smoke-bg {
+  opacity: 1;
+}
+
+/* After the soft rule, so it wins while both are briefly on at the
+   boundary between the two sections. */
+.spotlight-on body {
+  background-color: var(--haze-bg);
+}
+
+/* Reduced motion: the colours still change, instantly, with no zoom (the
+   panel's fade is switched off in page-utils.js). */
+@media (prefers-reduced-motion: reduce) {
+  .spotlight,
+  .spotlight h2,
+  .spotlight .media-box,
+  body,
+  #smoke-bg {
+    transition: none;
+  }
+
+  .spotlight.is-lit .media-box {
+    transform: none;
+  }
+}
+
+figure {
+  margin: 0;
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #eee;
+}
+
+figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.table-card {
+  max-width: 100%;
+  margin: 0 auto 1rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.results-table {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.results-table th,
+.results-table td {
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 767px) {
+  .table-card {
+    padding: 0.5rem;
+  }
+
+  .results-table {
+    font-size: 0.72rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.3rem 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-table {
+    font-size: 0.65rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.25rem 0.15rem;
+  }
+}
+
+.results-table th:first-child,
+.results-table td:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+.results-table thead th {
+  font-weight: 600;
+  background: var(--bg);
+  border-bottom: 2px solid var(--border);
+}
+
+.results-table thead tr:first-child th {
+  border-top: 2px solid var(--border);
+}
+
+/* Blank-row gap in the source table, between supervised and unsupervised
+   method groups, becomes a rule since the page doesn't render empty rows. */
+.results-table tr.group-start td {
+  border-top: 2px solid #c2c2c2;
+}
+
+.results-table tbody tr:last-child td {
+  border-bottom: 2px solid var(--border);
+}
+
+/* Best / second-best rows: tint the whole row so the method name reads as
+   important too, not just its numbers, matching the source table's emphasis. */
+.results-table tr.best td {
+  color: #d62728;
+  font-weight: 700;
+  background: rgba(214, 39, 40, 0.07);
+}
+
+.results-table tr.second-best td {
+  color: #1f66b4;
+  font-weight: 600;
+  background: rgba(31, 102, 180, 0.07);
+}
+
+/* Per-cell variant for tables where the best value differs by column. */
+.results-table td.is-best {
+  color: #d62728;
+  font-weight: 700;
+}
+
+.results-table td.is-second {
+  color: #1f66b4;
+  font-weight: 600;
+}
+
+/* ── Qualitative comparison grid (Input / GT / baselines / Ours) ──
+   One row per scene, eleven columns wide (Input, GT, eight baselines, Ours),
+   column labels given once in a head row rather than per tile. Eleven tiles
+   do not stay legible squeezed into the 900px column, so each column has a
+   floor and .qual-scroll scrolls sideways when the container is narrower
+   than the grid. */
+
+.qual-scroll {
+  margin-bottom: 1rem;
+}
+
+.qual-grid {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 0.4rem;
+}
+
+/* display:contents makes the head/row wrapper invisible to layout, so its
+   children land directly in the grid's own column tracks instead of each
+   wrapper claiming a single cell. */
+.qual-head,
+.qual-row {
+  display: contents;
+}
+
+.qual-head span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 0.35rem;
+}
+
+.qual-item {
+  margin: 0;
+}
+
+.qual-item img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  cursor: zoom-in;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.25s ease,
+    filter 0.25s ease;
+}
+
+.qual-item img:hover,
+.qual-item img:focus-visible {
+  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.qual-item img:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.qual-head .qual-ours {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.link-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.link-list li {
+  margin-bottom: 0.35rem;
+}
+
+.bibtex {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background: #f0f0f0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.bibtex code {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.bibtex-wrap {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  padding: 0.3rem 0.75rem;
+  font: 600 0.78rem var(--font);
+  color: var(--accent);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.copy-btn:hover,
+.copy-btn:focus-visible {
+  border-color: var(--accent);
+}
+
+.copy-btn.is-copied {
+  color: #fff;
+  background: #2e7d32;
+  border-color: #2e7d32;
+}
+
+/* ── Back-to-top button (js/page-utils.js shows it past the first screen) ── */
+.back-to-top {
+  position: fixed;
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 2rem);
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(0.5rem);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.back-to-top.is-visible {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+  background: #1f7fb8;
+  text-decoration: none;
+}
+
+.back-to-top svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: currentColor;
+}
+
+/* ── Lightbox (js/lightbox.js) ── */
+img[data-lightbox] {
+  cursor: zoom-in;
+}
+
+/* The page behind an open viewer must not scroll under the reader's wheel. */
+html.lightbox-open {
+  overflow: hidden;
+}
+
+.lightbox {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+}
+
+.lightbox::backdrop {
+  background: rgba(10, 12, 16, 0.92);
+}
+
+.lightbox__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  padding: 3.5rem 4rem 1.25rem;
+}
+
+.lightbox__stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Fills the stage's height (capped by its width) so a 256 px comparison tile
+   is actually enlarged rather than shown at its native, thumbnail size;
+   object-fit keeps any aspect ratio undistorted inside that box. */
+.lightbox__img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  /* The comparison sources are 256 px: blown up for inspection, a smooth
+     upscale reads as the display, hard pixels would read as an artefact. */
+  image-rendering: auto;
+}
+
+/* Only the diagram has more pixels than the screen, so only it toggles to
+   actual size; the 256 px comparison tiles are already shown enlarged. */
+.lightbox.can-zoom .lightbox__img {
+  cursor: zoom-in;
+}
+
+.lightbox.is-actual .lightbox__stage {
+  display: block;
+  overflow: auto;
+  touch-action: auto;
+}
+
+.lightbox.is-actual .lightbox__img {
+  width: auto;
+  height: auto;
+  max-width: none;
+  cursor: zoom-out;
+}
+
+.lightbox__caption {
+  margin: 0;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.lightbox__caption small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #b8bec6;
+  font-size: 0.78rem;
+}
+
+.lightbox__btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.lightbox__btn:hover,
+.lightbox__btn:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.lightbox__btn[hidden] {
+  display: none;
+}
+
+.lightbox__close {
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.lightbox__prev,
+.lightbox__next {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lightbox__prev {
+  left: 0.75rem;
+}
+
+.lightbox__next {
+  right: 0.75rem;
+}
+
+/* Method strip: one thumbnail per method in the open scene, current one
+   framed -- shows where you are and lets you jump straight to a method. */
+.lightbox__strip {
+  display: flex;
+  gap: 0.35rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 2px;
+}
+
+.lightbox__strip[hidden] {
+  display: none;
+}
+
+.lightbox__thumb {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0;
+  font: 500 0.68rem var(--font);
+  color: #b8bec6;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.lightbox__thumb img {
+  width: 3.25rem;
+  height: 3.25rem;
+  object-fit: cover;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  opacity: 0.6;
+}
+
+.lightbox__thumb[aria-current="true"] {
+  color: #fff;
+}
+
+.lightbox__thumb[aria-current="true"] img {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+@media (max-width: 640px) {
+  .lightbox__body {
+    padding: 3.5rem 0.75rem 1rem;
+  }
+
+  /* Side arrows would sit on the image; on phones swiping does the job and
+     the strip below is the visible control. */
+  .lightbox__prev,
+  .lightbox__next {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qual-item img,
+  .back-to-top {
+    transition: none;
+  }
+}
+
+/* Holds only the back-to-top button (position: fixed, so it takes no room):
+   just enough bottom space for the page panel to end below the last section,
+   with no rule above it since the sections already carry their own. */
+.footer {
+  margin-top: 0;
+  padding: 0 0 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.footer p {
+  margin: 0.25rem 0;
+}
+
+.small {
+  font-size: 0.8rem;
+}
+
+/* Shrinks the image grids in Result Demonstration / Ours Results a bit
+   relative to the text container. Every tile size below is a percentage of
+   this wrapper's width, so narrowing it here scales all of them down
+   together without touching their calc() formulas. */
+.media-narrow {
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/* ── Draggable before/after compare slider ── */
+
+.compare-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.compare-wrap {
+  margin: 0;
+}
+
+.compare-wrap figcaption {
+  margin-top: 0.65rem;
+}
+
+.compare {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #111;
+  cursor: col-resize;
+  touch-action: none;
+  aspect-ratio: 16 / 9;
+}
+
+.compare.is-dragging {
+  cursor: grabbing;
+}
+
+.compare__img--base {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.compare__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.compare__overlay img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.compare__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
+  cursor: col-resize;
+  /* Above the loupe (z-index 3). The lens is drawn at the pointer, so it lands
+     right on top of the handle exactly when the user is reaching for it --
+     the grab knob must not be swallowed by the magnifier. Drawing the handle
+     over the lens also makes its line continuous through the circle, which
+     reads as one split rather than two. */
+  z-index: 4;
+  touch-action: none;
+}
+
+.compare__handle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.compare__handle::after {
+  content: "◀ ▶";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 9px;
+  letter-spacing: -1px;
+  color: var(--accent);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.compare__label {
+  position: absolute;
+  bottom: 10px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 4px;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.compare__label--left {
+  left: 10px;
+}
+
+.compare__label--right {
+  right: 10px;
+}
+
+.compare--square {
+  aspect-ratio: 1 / 1;
+}
+
+/* Ours Results grid: 4 sliders per row on desktop (matching the Result
+   Demonstration row above), 2 then 1 as it narrows. */
+.compare-grid--results {
+  grid-template-columns: 1fr;
+  gap: var(--tile-gap);
+  margin-inline: auto;
+}
+
+@media (min-width: 560px) {
+  .compare-grid--results {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 820px) {
+  .compare-grid--results {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.compare-grid--results figcaption,
+.compare-solo figcaption {
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+}
+
+/* Slightly trimmed handle + labels: the tiles are ~275 px, not full width */
+.compare-grid--results .compare__handle::before,
+.compare-solo .compare__handle::before {
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+}
+
+.compare-grid--results .compare__handle::after,
+.compare-solo .compare__handle::after {
+  font-size: 8px;
+}
+
+.compare-grid--results .compare__label,
+.compare-solo .compare__label {
+  bottom: 8px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+}
+
+.compare-grid--results .compare__label--left,
+.compare-solo .compare__label--left {
+  left: 8px;
+}
+
+.compare-grid--results .compare__label--right,
+.compare-solo .compare__label--right {
+  right: 8px;
+}
+
+/* Auto-sweeping sliders: hide the drag affordance until pointed at */
+.compare[data-auto] .compare__handle::before,
+.compare[data-auto] .compare__handle::after {
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.compare[data-auto]:hover .compare__handle::before,
+.compare[data-auto]:hover .compare__handle::after,
+.compare[data-auto]:focus-within .compare__handle::before,
+.compare[data-auto]:focus-within .compare__handle::after {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .compare[data-auto] .compare__handle::before,
+  .compare[data-auto] .compare__handle::after {
+    opacity: 1;
+  }
+}
+
+/* ── Hover magnifier (loupe) ──
+   A circular 2x lens that follows the pointer, still split by the handle so
+   both layers are compared at the same pixel. Built by compare-slider.js only
+   on hover-capable, fine-pointer devices, so there is no touch fallback to
+   style here. The ring is a box-shadow rather than a border: a border would
+   shrink the content box and shift the magnified centre off the pointer. */
+
+.compare__loupe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  background: #111;
+  box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
+.compare.has-loupe .compare__loupe {
+  opacity: 1;
+}
+
+.compare__loupe-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+  /* Sources are 256 px, so 2x is already past native. Keep the smooth
+     interpolation: hard pixel edges would read as an artefact of the result
+     rather than of the display. */
+  image-rendering: auto;
+}
+
+.compare__loupe-clip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0;
+  overflow: hidden;
+}
+
+/* The real handle now draws on top of the lens at this exact x, so this line
+   only shows through where the handle's own line is translucent or offset.
+   Kept so the lens stays correct on its own if the stacking ever changes. */
+.compare__loupe-split {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* The knob now draws over the lens, which means it covers the very pixels the
+   user zoomed in on -- and the knob's whole job is to sit at the split, so
+   that overlap is the common case, not an edge case. Hollow it out while the
+   lens is up: still unmistakably the grab affordance, but you can read the
+   magnified image straight through it. */
+.compare.has-loupe .compare__handle::before {
+  background: transparent;
+  border-color: #fff;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.65), inset 0 0 5px rgba(0, 0, 0, 0.65);
+}
+
+.compare.has-loupe .compare__handle::after {
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Four-up row with a synced magnifier (Input / GT / CSUD / Ours) ──
+   A separate component from .compare: these are plain images, not sliders.
+   Driven by js/loupe-row.js. Hovering any tile lenses all of them at the same
+   normalised point, so one hazy region can be followed across all four methods. */
+
+.zoom-row {
+  display: grid;
+  /* Same breakpoints as .compare-grid--results (Ours Results) so a tile here
+     is always exactly the size of a tile there, at every viewport width. */
+  grid-template-columns: 1fr;
+  gap: var(--tile-gap);
+  /* The caption that follows carries .caption's -0.5rem top margin, which is
+     tuned for sitting under an h2; this restores a normal gap below the row. */
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 560px) {
+  .zoom-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 820px) {
+  .zoom-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.zoom-item {
+  margin: 0;
+}
+
+/* The one-tile magnifier demo. Its width is the results row's own track
+   formula rather than a fixed number, so the demo tile is exactly the size of
+   the tiles it is teaching -- what the reader practises on is what they get --
+   and it stays that way when the row reflows to two columns. */
+.zoom-solo {
+  display: block;
+  width: calc((100% - 3 * var(--tile-gap)) / 4);
+  margin-inline: auto;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .zoom-solo {
+    width: calc((100% - var(--tile-gap)) / 2);
+  }
+}
+
+.zoom-tile {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #111;
+  /* The one zero-motion cue that works for everyone, reduced-motion readers
+     included: the pointer itself says the tile magnifies. */
+  cursor: zoom-in;
+}
+
+/* Result Demonstration: the two methods the section is about get a colour
+   each, on a filled caption pill under the tile, so they read apart
+   from Input and Ground truth at a glance. SOTA is the baseline (amber),
+   Ours is the accent. Hardcoded rather than tokens: they are a pair, and
+   the amber has no other use on the page. */
+.zoom-fig--sota {
+  --hl: #c26a00;
+  --hl-bg: #fdf0dc;
+}
+
+.zoom-fig--ours {
+  --hl: var(--accent);
+  --hl-bg: #dcecf7;
+}
+
+.zoom-fig--sota figcaption,
+.zoom-fig--ours figcaption {
+  display: block;
+  width: fit-content;
+  margin-inline: auto;
+  padding: 0.1rem 0.7rem;
+  font-weight: 700;
+  color: var(--hl);
+  background: var(--hl-bg);
+  border-radius: 999px;
+}
+
+/* The tile owns the frame, so the global `figure img` border and radius have
+   to come off, otherwise every tile draws a second, inset border. */
+.zoom-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.zoom-item figcaption {
+  margin-top: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+/* Ring drawn with box-shadow, not border: a border would shrink the content
+   box and shift the magnified centre off the sampled point. */
+.zoom-tile__lens {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 50%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0, 0, 0, 0.5);
+}
+
+.zoom-row.is-zooming .zoom-tile__lens {
+  opacity: 1;
+}
+
+/* Ghost cursor for the self-demonstrating tour. Drawn on the first tile only:
+   a reader has one mouse, so four arrows would say the opposite of what this
+   row does. One arrow beside four moving lenses says "this pointer drives all
+   of them", which is the whole component, and is not something a still image
+   can state. It disappears the instant a real pointer arrives. */
+.zoom-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 18px;
+  background: #fff;
+  /* A plain arrow silhouette; the tip sits at (0,0) so the script can place it
+     at the sampled point with no hotspot offset to keep in sync. */
+  clip-path: polygon(
+    0 0,
+    0 16px,
+    4.2px 12.2px,
+    6.6px 17.6px,
+    8.6px 16.7px,
+    6.3px 11.9px,
+    11px 11.6px
+  );
+  /* drop-shadow follows the clipped silhouette, so this outlines the arrow
+     rather than boxing it, it has to stay legible over any image. */
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.95))
+    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.zoom-row.is-auto .zoom-ghost {
+  opacity: 1;
+}
+
+/* ── Banner (first thing under the title) ──
+   Five beats in a row -- hazy input, then Cluster, Route, Grade and Dehaze -- with
+   chevrons between them, so the reader gets the claim without reading a
+   sentence. Cluster and Grade spend three frames against everyone else's one, which is
+   what the 1fr/3fr/1fr/3fr/1fr track list buys: its sub-frames then come out the
+   same size as the single frames beside them, and the row keeps one
+   horizon. */
+.banner {
+  padding-bottom: 1.75rem;
+}
+
+/* An ordered list because the row is a sequence, not a gallery -- the
+   chevrons below are the marker, so the list's own one is dropped. */
+.banner-flow {
+  display: grid;
+  /* Input | Cluster (3 frames) | Route | Grade (3 frames) | Dehaze */
+  grid-template-columns: 1fr 3fr 1fr 3fr 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.banner-step {
+  margin: 0;
+}
+
+.banner-step__frame {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Cluster's frame is a rail for three, so it hands the border, fill and
+   square to the sub-frames and keeps only the position the chevron needs. */
+.banner-step__frame--group {
+  display: grid;
+  aspect-ratio: auto;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.banner-subs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+/* The dashed ring that makes the three frames one stage. Drawn on a
+   pseudo-element outside the strip's own box rather than as padding and a
+   border on it, so it costs no layout: the sub-frames stay the size of the
+   single frames beside them, and every verb under the row keeps its
+   baseline. The 7px outset clears the frames without reaching the chevrons,
+   which sit 11px further out in the 2rem gap. Colour is --accent at 45%,
+   tying the ring to the CLUSTER label under it. */
+.banner-subs::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 2px dashed rgba(0, 98, 155, 0.7);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.banner-sub {
+  display: block;
+  aspect-ratio: 1 / 1;
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Rounded on the image rather than clipped by the frame: the frame has to
+   stay unclipped so the chevron it carries can sit out in the gap. */
+.banner-step__frame img,
+.banner-sub img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* Chevron in the gap, centred on the frames rather than on the whole tile:
+   the captions below vary in height, so anchoring to the tile would leave it
+   sitting low. */
+.banner-step + .banner-step .banner-step__frame::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -1rem;
+  width: 14px;
+  height: 14px;
+  /* The rotated box draws a ">" whose visible mass sits ~5px right of the
+     box's own centre, so the box is pulled 5px left of the gap's midpoint
+     (-16px from the frame) to put the arrow, not its box, in the middle. */
+  margin: -8px 0 0 -12px;
+  border-top: 3px solid var(--muted);
+  border-right: 3px solid var(--muted);
+  border-top-right-radius: 2px;
+  transform: rotate(45deg);
+}
+
+/* The Cluster ring reaches 9px into the gaps on both sides of it, so the free
+   space there is 23px, not 32px, and its midpoint moves away from the ring:
+   left of Cluster it sits further left, right of Cluster further right. */
+.banner-step + .banner-step--detect .banner-step__frame::before {
+  margin-left: -14px;
+}
+
+.banner-step--detect + .banner-step .banner-step__frame::before {
+  margin-left: -7px;
+}
+
+/* Last in the tile, so the four labels sit on one baseline and the
+   row can be read off without touching the grey captions above them. */
+.banner-step__verb {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* The input is not one of the three verbs, so it is labelled but not
+   accented -- the colour is what makes Cluster/Route/Dehaze scannable. */
+.banner-step__verb--plain {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.banner-step__caption {
+  /* Pinned to a single line: anything longer and the verbs below it stop
+     sharing a baseline, which is the whole point of putting them last. Keep
+     every caption under about 18 characters. */
+  min-height: 1.45em;
+  margin: 0.55rem 0 0;
+  /* Centred with the verb under it: the pair reads as one label block
+     anchored to the middle of its frame, and it matches Detect, whose three
+     names are each centred in their own track. */
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* Cluster's caption rides the same three tracks as its frames, so each name
+   lands under the frame it belongs to. */
+.banner-step__caption--split {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  text-align: center;
+}
+
+/* The claim, under the row it describes: the frames are what the reader
+   looks at first, so the sentence sits where a figure caption goes. Short
+   enough (about 70 characters) to stay on one line under the 880 px row, so
+   it is capped at the row's width rather than at a measure. Qualified with the element so
+   it outranks the page-wide `.section > p:not(.anonymous)` justify rule,
+   which would otherwise stretch its word gaps. */
+.banner > p.banner-caption {
+  max-width: 880px;
+  margin: 1.3rem auto 0;
+  text-align: center;
+  text-wrap: balance;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.banner-caption strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Phones and narrow tablets: two columns. Reading order is still the flow
+   order, so the verbs keep carrying the sequence and the chevrons -- which
+   would now point across a wrap -- go. Detect keeps all three frames rather
+   than dropping two: they are small here, but a cluster scatter and a score
+   chart read as patterns at any size, and losing them would leave the busiest
+   stage looking like the simplest. */
+@media (max-width: 700px) {
+  .banner-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem 1.25rem;
+    max-width: 420px;
+  }
+
+  /* Square so the three sub-frames sit in the middle of a cell the same
+     height as its neighbours, instead of hugging the top of the row. */
+  .banner-step__frame--group {
+    aspect-ratio: 1 / 1;
+    align-content: center;
+  }
+
+  .banner-step + .banner-step .banner-step__frame::before {
+    display: none;
+  }
+
+  .banner-step__caption {
+    min-height: 0;
+  }
+
+  .banner-step__caption--split {
+    font-size: 0.64rem;
+  }
+
+  .banner > p.banner-caption {
+    max-width: 420px;
+    font-size: 0.85rem;
+  }
+
+  /* Five tiles in two columns leave the last one alone on a row: centre it
+     at the width of a normal cell. */
+  .banner-step:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: calc(50% - 0.6rem);
+  }
+}
+
+/* ── The standalone demonstration slider ──
+   One always-on sweep above the grid: it shows what the control does, and the
+   six manual scenes below refer back to it. Sized like a demo tile rather than
+   a full-width figure so it reads as one of them, not as a teaser. */
+
+.compare-solo {
+  /* Sized off the SAME grid as the six scenes below rather than a fixed
+     max-width: it has to stay one tile wide at every breakpoint, and a fixed
+     width would overtake the tiles as soon as the viewport narrowed enough to
+     shrink them. Sitting in the middle track centres it on desktop. */
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--tile-gap);
+  margin-inline: auto;
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 560px) {
+  .compare-solo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 641px) and (max-width: 819px) {
+  .compare-solo {
+    max-width: calc(50% - var(--tile-gap) * 0.5);
+  }
+}
+
+@media (min-width: 820px) {
+  .compare-solo {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: calc(75% - var(--tile-gap) * 0.25);
+  }
+
+  .compare-solo > .compare-wrap {
+    grid-column: 2;
+  }
+}
+
+/* The "Drag to compare" pill. Drawn on .compare's own ::after, so it costs no
+   extra markup. */
+
+.compare[data-auto-hint]::after {
+  content: "\2194  Drag to compare";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: var(--accent);
+  border-radius: 999px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  /* Above the handle (4) and the loupe (3): it is the one thing on the tile
+     that must never be covered while it still has something to say. */
+  z-index: 5;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+/* Once the reader is on the image they are already engaging with it, so the
+   instruction gets out of the way -- and out of the loupe's way. */
+.compare[data-auto-hint]:hover::after,
+.compare[data-auto-hint]:focus-within::after {
+  opacity: 0;
+}
+
+/* The architecture text links to its figure; clear the sticky nav on the jump
+   the same way .section headings do. */
+#fig-framework,
+#fig-loss {
+  scroll-margin-top: 3.75rem;
+}
+
+/* The loss diagram is a few shapes and labels; at the full column width it
+   would tower over the text around it. */
+.figure--narrow {
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+/* ── Polish effects (js/effects.js and the rules below) ──────────────────── */
+
+/* 1. Scroll progress: a thin accent line along the top edge, scaled by
+   js/effects.js. Above everything (the sticky nav is z-index 20), and inert. */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  z-index: 1000;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--accent), #5fb3e0);
+  box-shadow: 0 0 8px rgba(0, 98, 155, 0.45);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* 2. "Haze clears" scroll reveal: out of a blur, like a dehazed image
+   sharpening. js/effects.js adds .reveal (hidden) then .is-visible, and takes
+   both away again once settled. Never present without JavaScript. */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(9px);
+  transition:
+    opacity 0.85s ease,
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.95s ease;
+  will-change: opacity, transform, filter;
+}
+
+.reveal--soft {
+  filter: none;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* 3. Banner intro: each frame starts under a veil of haze (washed out, low
+   contrast, a little blurred) and clears in turn, left to right, following
+   Input -> Cluster -> Route -> Dehaze. Pure CSS, plays once on load. */
+@keyframes haze-clear {
+  from {
+    filter: blur(7px) brightness(2.1) contrast(0.4) saturate(0.25);
+  }
+  to {
+    filter: none;
+  }
+}
+
+@keyframes haze-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.banner-step:nth-child(1) {
+  --i: 0;
+}
+.banner-step:nth-child(2) {
+  --i: 1;
+}
+.banner-step:nth-child(3) {
+  --i: 2;
+}
+.banner-step:nth-child(4) {
+  --i: 3;
+}
+.banner-step:nth-child(5) {
+  --i: 4;
+}
+
+.banner-sub:nth-child(2) img {
+  --j: 1;
+}
+.banner-sub:nth-child(3) img {
+  --j: 2;
+}
+
+.banner-step__frame img,
+.banner-sub img {
+  animation: haze-clear 1.5s ease-out both;
+  animation-delay: calc(0.15s + var(--i, 0) * 0.5s + var(--j, 0) * 0.15s);
+}
+
+/* Chevrons and labels arrive just behind the frame they belong to. */
+.banner-step + .banner-step .banner-step__frame::before,
+.banner-step__caption,
+.banner-step__verb {
+  animation: haze-fade-in 0.7s ease-out both;
+  animation-delay: calc(0.55s + var(--i, 0) * 0.5s);
+}
+
+.banner-caption {
+  animation: haze-fade-in 0.9s ease-out both;
+  animation-delay: 2.8s;
+}
+
+/* 4. Hover: figures and banner frames lift, with a soft accent glow. */
+.figure img,
+.banner-step__frame:not(.banner-step__frame--group) img,
+.banner-sub img {
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.figure img:hover,
+.banner-step__frame:not(.banner-step__frame--group) img:hover,
+.banner-sub img:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px -12px rgba(0, 98, 155, 0.45);
+}
+
+.figure img:hover {
+  border-color: rgba(0, 98, 155, 0.45);
+}
+
+/* Table rows light up under the pointer. */
+.results-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.results-table tbody tr:hover td {
+  background: rgba(0, 98, 155, 0.08);
+}
+
+/* Comparison grid: the row under the pointer stays sharp and lifted, the
+   others step back, so one scene can be followed across eleven columns.
+   (.is-hot / .has-hot are set by js/effects.js; the rows are display:
+   contents, so the effect lives on their images.) */
+.qual-grid.has-hot .qual-row:not(.is-hot) .qual-item img {
+  opacity: 0.4;
+  filter: grayscale(0.6);
+}
+
+.qual-row.is-hot .qual-item img {
+  box-shadow: 0 4px 14px -4px rgba(0, 98, 155, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #scroll-progress {
+    will-change: auto;
+  }
+
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+
+  .banner-step__frame img,
+  .banner-sub img,
+  .banner-step + .banner-step .banner-step__frame::before,
+  .banner-step__caption,
+  .banner-step__verb,
+  .banner-caption {
+    animation: none;
+  }
+
+  .figure img,
+  .banner-step__frame img,
+  .banner-sub img {
+    transition: none;
+  }
+
+  .figure img:hover,
+  .banner-step__frame:not(.banner-step__frame--group) img:hover,
+  .banner-sub img:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,2055 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HARD-Dehaze</title>
+    <meta
+      name="description"
+      content="HARD-Dehaze — Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing — project page."
+    />
+    <link rel="stylesheet" href="./css/style.css?v=56" />
+    <!-- Optional: uncomment after acceptance
+  <meta property="og:title" content="HARD-Dehaze: Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing">
+  <meta property="og:description" content="A hardness-aware framework that clusters hazy remote sensing images by degradation, scores each cluster, and spends training on the clusters the model handles worst.">
+  <meta property="og:image" content="./assets/teaser.png">
+  --></head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="container">
+          <h1>
+            Learning What Is Hard: Vision-Language Guided Active Learning for
+            Unpaired Remote Sensing Image Dehazing
+          </h1>
+
+          <p class="authors">
+            Thi-Quynh-Nhu Duong<sup>1</sup>, Thi-Ngoc-Hanh Le<sup>1</sup>
+          </p>
+          <p class="affiliations">
+            <sup>(1)</sup> International University, Vietnam National University
+            Ho Chi Minh City, Vietnam
+          </p>
+        </div>
+      </header>
+
+      <!-- Section jump-links, styled as an overlapping chevron/ribbon strip
+       (structure adapted from CodeFormer's #tabs, recolored for this
+       page's light theme since that page's white-on-gray tabs rely on a
+       darker header backdrop this page doesn't have).
+       Lives as a sibling of .hero (not nested inside it): position: sticky
+       only stays stuck for as long as the viewport is scrolled within its
+       PARENT's box, and .hero is short -- past it, the nav would scroll
+       away with it. Sitting directly in .page-shell instead, which spans
+       the whole page, keeps it pinned all the way to the footer. -->
+      <nav class="tabs-nav" aria-label="Jump to section">
+        <!-- One row, never wrapping: paper sections first, then the media/resource
+         tabs (icon + accent outline) behind a divider. When the row doesn't
+         fit (phones), it scrolls sideways instead -- js/scroll-spy.js keeps
+         the active tab in view and toggles the edge fades. Labels are short
+         forms of the section headings so all eight fit on one desktop row. -->
+        <ul>
+          <li><a href="#abstract">Abstract</a></li>
+          <li><a href="#system-architecture">Architecture</a></li>
+          <li><a href="#result-demonstration">Demonstration</a></li>
+          <li><a href="#ours-results">Our Results</a></li>
+          <li><a href="#comparison">Comparison</a></li>
+          <li class="tabs-nav__sep" aria-hidden="true"></li>
+          <li>
+            <a class="tabs-nav__res" href="#live-demo">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M3 4h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v9h16V6z"
+                /></svg
+              >Live Demo</a
+            >
+          </li>
+          <li>
+            <a class="tabs-nav__res" href="#video">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5v13l11-6.5z" /></svg
+              >Video</a
+            >
+          </li>
+          <li>
+            <a class="tabs-nav__res" href="#code">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"
+                /></svg
+              >Code</a
+            >
+          </li>
+        </ul>
+      </nav>
+
+      <main>
+        <!-- Banner: the paper's title, drawn. The three verbs in the title are the
+         only thing a reader skimming for five seconds will take away, so they
+         sit last in each tile, on one baseline across the row: the accented
+         words line up and the row can be read off in a glance, with each
+         frame's own caption above them in grey for anyone who slows down.
+         Detect is one beat but three frames, ringed by a dashed box, because
+         that is what the detector consumes and produces. One scene
+         throughout, so the row is one pass over one image; the spread across
+         scenes is the job of Our Results further down. The last frame is the
+         live before/after, parked on our output so the row reads correctly
+         before anyone touches it. Sources are ~230 px and no frame renders
+         wider, so every tile is a downscale. The one sentence of prose sits
+         under the row rather than over it: the frames are what the reader
+         looks at first, so the words belong where a figure caption goes. No
+         id: it is not a nav destination. -->
+        <section
+          class="container section banner"
+          aria-label="What HARD-Dehaze does"
+        >
+          <ol class="banner-flow">
+            <li class="banner-step">
+              <div class="banner-step__frame">
+                <img
+                  src="./assets/banner/hazy.webp"
+                  width="226"
+                  height="226"
+                  alt="A hazy remote sensing image of farmland and roads under a pale veil of haze"
+                />
+              </div>
+              <p class="banner-step__caption">Hazy image</p>
+              <p class="banner-step__verb banner-step__verb--plain">Input</p>
+            </li>
+
+            <li class="banner-step banner-step--detect">
+              <div class="banner-step__frame banner-step__frame--group">
+                <span class="banner-subs">
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/embedding.webp"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="DA-CLIP degradation embeddings of the hazy training images"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/clusters.webp"
+                      width="230"
+                      height="230"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The embeddings partitioned into degradation clusters by k-means"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/scores.webp"
+                      width="227"
+                      height="227"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The score of each cluster: how well the dehazing generator currently handles it"
+                    />
+                  </span>
+                </span>
+              </div>
+              <!-- Three names on the same three tracks as the frames above, so each
+               word sits under the frame it belongs to and this tile still
+               spends exactly one caption line, like its neighbours. -->
+              <p class="banner-step__caption banner-step__caption--split">
+                <span>Embedding</span><span>Clusters</span><span>Scores</span>
+              </p>
+              <p class="banner-step__verb">Cluster</p>
+            </li>
+
+            <li class="banner-step">
+              <div class="banner-step__frame">
+                <img
+                  src="./assets/banner/routing.webp"
+                  width="230"
+                  height="230"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Expert activation map: the router sends each region to the expert that suits its haze"
+                />
+              </div>
+              <p class="banner-step__caption">Expert routing</p>
+              <p class="banner-step__verb">Route</p>
+            </li>
+
+            <li class="banner-step banner-step--detect">
+              <!-- Haze-aware prompt learning: the graded haze sequence the prompt
+               is trained on (the paper's Fig. 14), three of its seven levels,
+               from clean (gamma 0) to the real hazy image (gamma 1). Ringed
+               like Cluster because it is again several frames in one beat. -->
+              <div class="banner-step__frame banner-step__frame--group">
+                <span class="banner-subs">
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-clean.webp"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The clean image, haze level gamma 0"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-mid.webp"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The same image with partial haze synthesised by the atmospheric scattering model, gamma 0.35"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-hazy.webp"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The fully hazy image, gamma 1"
+                    />
+                  </span>
+                </span>
+              </div>
+              <p class="banner-step__caption banner-step__caption--split">
+                <span>&gamma;=0</span><span>&gamma;=0.35</span><span>&gamma;=1</span>
+              </p>
+              <p class="banner-step__verb">Grade</p>
+            </li>
+
+            <li class="banner-step">
+              <div class="banner-step__frame">
+                <img
+                  src="./assets/banner/output.webp"
+                  width="230"
+                  height="230"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Our dehazed output: the haze is gone and colours and structures are natural"
+                />
+              </div>
+              <p class="banner-step__caption">Dehazed output</p>
+              <p class="banner-step__verb">Dehaze</p>
+            </li>
+          </ol>
+
+          <p class="banner-caption">
+            <strong>HARD-Dehaze</strong> - find the hazy images the model handles
+            worst, route each to a suited expert, and grade the haze left
+            behind.
+          </p>
+        </section>
+
+        <section id="abstract" class="container section">
+          <h2>Abstract</h2>
+          <!-- TODO: the abstract in the PDF is still the journal template's
+           placeholder, so this one is written from the paper's introduction to
+           its method, results and conclusion. Replace it with the final text. -->
+          <p>
+            Unpaired remote sensing image dehazing avoids the need for aligned
+            hazy&ndash;clean pairs, but real haze varies widely in density,
+            colour cast and spatial distribution, and training on the whole
+            data distribution at once lets the most common haze conditions
+            dominate while rarer ones are neglected. We propose
+            <strong>HARD-Dehaze</strong>, a Hardness-Aware Remote-sensing
+            Dehazing framework that uses a vision-language model to indicate
+            the degradation level. Hazy training images are embedded with
+            DA-CLIP and partitioned into degradation clusters; the haze-removal
+            generator is then scored on each cluster, and the sample
+            distribution of every epoch is adjusted so that the clusters on
+            which the model performs worst are enriched with new samples while
+            those that are already stable are curtailed. To adapt to diverse
+            haze, an asymmetric Mixture-of-Experts bottleneck combines dense
+            soft routing in shallow blocks with sparse hard routing in deeper
+            ones, conditioned on a dark-channel-prior haze descriptor; and
+            haze-aware prompt learning over graded haze sequences penalises the
+            residual haze that remains in partially dehazed outputs.
+            Experiments on SateHaze1k, RRSHID, RICE1 and RICE2, and
+            out-of-distribution evaluation on RSID, show that HARD-Dehaze
+            reaches the best PSNR among unsupervised methods on all four
+            benchmarks while shortening training time.
+          </p>
+          <p class="keywords">
+            <strong>Keywords:</strong>
+            Remote sensing image dehazing; Unpaired learning; Active learning;
+            Mixture of experts; Vision-language prompt learning; Cycle
+            consistency
+          </p>
+        </section>
+
+        <section id="system-architecture" class="container section">
+          <h2>System Architecture</h2>
+          <figure id="fig-framework" class="figure">
+            <!-- Inline copy is an 1800 px WebP (~165 KB); the 4231 px original
+             (~545 KB) only loads when the reader opens it in the lightbox,
+             where the small labels in the diagram become legible. -->
+            <img
+              src="./assets/framework.webp?v=3"
+              width="1800"
+              height="842"
+              loading="lazy"
+              decoding="async"
+              data-lightbox="framework"
+              data-full="./assets/framework-full.webp?v=3"
+              data-caption="Overview of the proposed HARD-Dehaze framework pipeline."
+              alt="Overview of the proposed framework pipeline"
+            />
+            <figcaption>
+              Figure 1: Overview of the proposed HARD-Dehaze framework pipeline.
+            </figcaption>
+          </figure>
+          <p>
+            We propose the HARD-Dehaze framework
+            (<a href="#fig-framework">Figure&nbsp;1</a>), consisting of a
+            haze-removal generator G<sub>A</sub>, a haze-synthesis generator
+            G<sub>B</sub>, and two domain-specific discriminators.
+            G<sub>A</sub> recovers a dehazed image and estimates a haze prior
+            embedding from its own input. G<sub>B</sub> is always conditioned
+            on an embedding measured on a real hazy image, so the haze it
+            synthesizes follows real haze statistics instead of settling on
+            arbitrary degradations. At inference only G<sub>A</sub> is used.
+          </p>
+          <p>
+            At the end of each iteration an active learning strategy
+            dynamically regulates the data distribution in the latent space
+            (<a href="#fig-active">Figure&nbsp;2</a>): it expands the clusters
+            on which the model still dehazes inconsistently with new samples,
+            and curtails the clusters on which haze removal is already stable.
+          </p>
+          <figure id="fig-active" class="figure">
+            <!-- Full column width: the diagram has small step labels (H1-H7, C1-C2)
+             that need the room. A 1337 px WebP (~63 KB) stays sharp at this
+             width; the lightbox opens the same file larger. -->
+            <img
+              src="./assets/active-learning.webp?v=2"
+              width="1337"
+              height="768"
+              loading="lazy"
+              decoding="async"
+              data-lightbox="active-learning"
+              data-full="./assets/active-learning.webp?v=2"
+              data-caption="Overview of the degradation-aware active training strategy."
+              alt="The degradation-aware active training strategy: hazy images are embedded and clustered, each cluster is scored, and new samples are allocated to the lowest-scoring clusters"
+            />
+            <figcaption>
+              Figure 2: Overview of the degradation-aware active training
+              strategy.
+            </figcaption>
+          </figure>
+          <p>
+            <strong>Degradation-aware active learning.</strong> Hazy images are
+            embedded with the DA-CLIP image encoder and split into
+            <em>K</em> clusters by k-means. Every few epochs the generator is
+            scored on each cluster by the drop in DA-CLIP haze probability and
+            by how far its outputs have moved from the cluster's hazy centroid
+            towards the clean centroid. New samples are allocated in inverse
+            proportion to the score, so the best-handled cluster receives
+            almost none and the worst-handled ones are progressively enriched.
+          </p>
+          <p>
+            <strong>Asymmetric Mixture-of-Experts.</strong> Three MoE blocks
+            sit in the bottleneck of G<sub>A</sub>. The first is a Soft-MoE
+            block with dense routing; the other two are Hard-MoE blocks with
+            top-2 routing over experts of different widths, conditioned on a
+            haze descriptor computed from the dark channel prior and spectral
+            statistics. Thin haze can go to lighter experts, and the
+            high-capacity expert is kept for dense, uneven haze.
+          </p>
+          <p>
+            <strong>Haze-aware prompt learning.</strong> A learned CLIP prompt
+            scores how much haze an image still contains. It is trained on
+            graded haze sequences built with the atmospheric scattering model
+            and a violation-aware sampler that revisits the level transitions
+            the prompt still misorders, so partially dehazed outputs are
+            penalised rather than treated as clean.
+          </p>
+        </section>
+
+        <!-- Four-up qualitative comparison. The auto-sweeping head-to-head
+         that used to sit here moved into the Interactive Demo, where it now
+         earns its keep as the affordance hint for the draggable sliders. -->
+        <section id="result-demonstration" class="container section">
+          <h2>Result Demonstration</h2>
+          <!-- Four-up synced magnifier. Independent of the sliders below:
+           js/loupe-row.js, .zoom-* styles, assets/loupe/. -->
+          <p class="caption">
+            One scene, four images.
+            <span class="only-hover">Hover anywhere over</span
+            ><span class="only-touch">Tap anywhere on</span> any tile and all
+            four magnify the <em>same</em> point at once, so you can pick a
+            hazy region in the input and follow what each method did to it, side by
+            side against the ground truth. The sample below shows the magnifier
+            working; the results are underneath it.
+          </p>
+
+          <!-- One-tile demonstration of the magnifier, on a throwaway sample rather
+           than on a result scene, so a control demo is never mistaken for a
+           claim. data-zoom-auto is opt-in precisely so the results row below
+           stays still. -->
+          <div class="media-narrow">
+            <div class="zoom-row zoom-solo" data-zoom-auto="true">
+              <figure class="zoom-item">
+                <div class="zoom-tile">
+                  <img
+                    src="./assets/sample/input.png"
+                    width="256"
+                    height="256"
+                    alt="Sample hazy image demonstrating the magnifier"
+                  />
+                </div>
+                <figcaption>
+                  Sample: <span class="only-hover">hover</span
+                  ><span class="only-touch">tap</span> to magnify
+                </figcaption>
+              </figure>
+            </div>
+
+            <div class="zoom-row">
+              <figure class="zoom-item">
+                <div class="zoom-tile">
+                  <img
+                    src="./assets/loupe/input.png?v=2"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input"
+                  />
+                </div>
+                <figcaption>Input</figcaption>
+              </figure>
+              <figure class="zoom-item">
+                <div class="zoom-tile">
+                  <img
+                    src="./assets/loupe/gt.png?v=2"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference"
+                  />
+                </div>
+                <figcaption>Ground truth</figcaption>
+              </figure>
+              <figure class="zoom-fig--sota zoom-item">
+                <div class="zoom-tile">
+                  <img
+                    src="./assets/loupe/ubrfc.png?v=2"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="SOTA (UBRFC-Net) dehazing result"
+                  />
+                </div>
+                <figcaption>SOTA</figcaption>
+              </figure>
+              <figure class="zoom-fig--ours zoom-item">
+                <div class="zoom-tile">
+                  <img
+                    src="./assets/loupe/our.png?v=2"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result"
+                  />
+                </div>
+                <figcaption>Ours</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <p class="caption" style="margin-top: 0">
+            <!-- UBRFC-Net is the strongest unsupervised baseline in the paper's
+             Table 1 (second on SateHaze1k and RRSHID). -->
+            <strong>About the SOTA baseline (UBRFC-Net).</strong> UBRFC-Net,
+            short for
+            <em
+              >Unsupervised Bidirectional Contrastive Reconstruction and
+              Adaptive Fine-Grained Channel Attention Networks</em
+            >
+            (Neural Networks, 2024), dehazes without paired hazy/clean
+            training data by combining bidirectional contrastive
+            reconstruction with adaptive fine-grained channel attention. It is
+            the strongest unsupervised baseline in our comparison, ranking
+            second on SateHaze1k and RRSHID, which makes it the method our
+            result is set against above.
+          </p>
+        </section>
+
+        <!-- Interactive demo: 6 draggable input vs. ours sliders -->
+        <section id="ours-results" class="container section">
+          <h2>Our Results</h2>
+          <p class="caption">
+            The slider below runs on its own to show what the control does. The
+            six scenes under it behave identically, but are yours to drive: drag
+            a handle, click anywhere on an image, or use the arrow keys. Fully
+            left = our dehazed output; fully right = the hazy input. Hover any
+            of them for a 2&times; magnifier over the residual haze.
+          </p>
+
+          <!-- Standalone demonstration slider. It sweeps for as long as the page is
+           open -- it is not a one-shot hint, it is the worked example the grid
+           below refers back to. Pauses only for the usual reasons (hover, drag,
+           off-screen, hidden tab, reduced motion). -->
+          <div class="media-narrow">
+            <div class="compare-solo">
+              <figure class="compare-wrap">
+                <div
+                  class="compare compare--square"
+                  data-position="50"
+                  data-auto="true"
+                  data-auto-hint="true"
+                >
+                  <img
+                    class="compare__img compare__img--base"
+                    width="256"
+                    height="256"
+                    src="./assets/sample/input.png"
+                    alt="Sample hazy input"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      width="256"
+                      height="256"
+                      src="./assets/sample/ours.png"
+                      alt="Our dehazing result on the sample"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare the sample hazy input and our result"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+                <figcaption>Sample: drag to compare</figcaption>
+              </figure>
+            </div>
+
+            <div class="compare-grid compare-grid--results">
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/1/input.png?v=2"
+                    alt="Hazy input (scene 1)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/1/our.png?v=2"
+                      alt="Our dehazing result (scene 1)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 1"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/2/input.png?v=2"
+                    alt="Hazy input (scene 2)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/2/our.png?v=2"
+                      alt="Our dehazing result (scene 2)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 2"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/3/input.png?v=2"
+                    alt="Hazy input (scene 3)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/3/our.png?v=2"
+                      alt="Our dehazing result (scene 3)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 3"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/4/input.png?v=2"
+                    alt="Hazy input (scene 4)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/4/our.png?v=2"
+                      alt="Our dehazing result (scene 4)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 4"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/5/input.png?v=2"
+                    alt="Hazy input (scene 5)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/5/our.png?v=2"
+                      alt="Our dehazing result (scene 5)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 5"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/6/input.png?v=2"
+                    alt="Hazy input (scene 6)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/6/our.png?v=2"
+                      alt="Our dehazing result (scene 6)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 6"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/7/input.png?v=2"
+                    alt="Hazy input (scene 7)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/7/our.png?v=2"
+                      alt="Our dehazing result (scene 7)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 7"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/8/input.png?v=2"
+                    alt="Hazy input (scene 8)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/8/our.png?v=2"
+                      alt="Our dehazing result (scene 8)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 8"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/9/input.png?v=2"
+                    alt="Hazy input (scene 9)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/9/our.png?v=2"
+                      alt="Our dehazing result (scene 9)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 9"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/10/input.png?v=2"
+                    alt="Hazy input (scene 10)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/10/our.png?v=2"
+                      alt="Our dehazing result (scene 10)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 10"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/11/input.png?v=2"
+                    alt="Hazy input (scene 11)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/11/our.png?v=2"
+                      alt="Our dehazing result (scene 11)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 11"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+              <figure class="compare-wrap">
+                <div class="compare compare--square" data-position="50">
+                  <img
+                    class="compare__img--base"
+                    loading="lazy"
+                    decoding="async"
+                    width="256"
+                    height="256"
+                    src="./assets/slider/12/input.png?v=2"
+                    alt="Hazy input (scene 12)"
+                  />
+                  <div class="compare__overlay">
+                    <img
+                      loading="lazy"
+                      decoding="async"
+                      width="256"
+                      height="256"
+                      src="./assets/slider/12/our.png?v=2"
+                      alt="Our dehazing result (scene 12)"
+                    />
+                  </div>
+                  <div
+                    class="compare__handle"
+                    role="slider"
+                    aria-label="Compare hazy input and our result, scene 12"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="50"
+                    tabindex="0"
+                  ></div>
+                  <span class="compare__label compare__label--left">Ours</span>
+                  <span class="compare__label compare__label--right"
+                    >Input</span
+                  >
+                </div>
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <section id="comparison" class="container section">
+          <h2>Comparison</h2>
+          <p class="caption">
+            Qualitative comparison on SateHaze1k and RRSHID, with the thin,
+            moderate and thick haze subsets merged into one test set. Each
+            column is the same input processed by one method; rows (a)&ndash;(h)
+            are eight scenes of varying haze density, texture and structure.
+            Click any image to enlarge it, then use the arrow keys (or swipe)
+            to flip between methods on the same scene.
+          </p>
+          <div class="qual-scroll">
+            <div class="qual-grid">
+              <div class="qual-head">
+                <span>Input</span>
+                <span>Ground truth</span>
+                <span>DDLNet</span>
+                <span>Diff-HazeNet</span>
+                <span>Cycle-SNSPGAN</span>
+                <span>UBRFC-Net</span>
+                <span>DehazeSB</span>
+                <span>USID-Net</span>
+                <span>MCAF-Net</span>
+                <span>UCL-Dehaze</span>
+                <span class="qual-ours">Ours</span>
+              </div>
+              <!-- Row 1: scene (a) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene a)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/1/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene a)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 2: scene (b) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene b)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/2/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene b)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 3: scene (c) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene c)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/3/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene c)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 4: scene (d) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene d)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/4/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene d)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 5: scene (e) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene e)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/5/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene e)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 6: scene (f) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene f)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/6/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene f)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 7: scene (g) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene g)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/7/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene g)"
+                  />
+                </figure>
+              </div>
+              <!-- Row 8: scene (h) -->
+              <div class="qual-row">
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/input.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Hazy input (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/gt.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Ground truth, haze-free reference (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/ddlnet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DDLNet dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/diff-hazenet.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Diff-HazeNet dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/cyclesnp.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Cycle-SNSPGAN dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/ubrfc.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UBRFC-Net dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/dehazesb.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="DehazeSB dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/usid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="USID-Net dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/rrshid.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="RRSHID dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/ucl.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="UCL-Dehaze dehazing result (scene h)"
+                  />
+                </figure>
+                <figure class="qual-item">
+                  <img
+                    src="./assets/comparision/8/our.png"
+                    width="256"
+                    height="256"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Our dehazing result (scene h)"
+                  />
+                </figure>
+              </div>
+            </div>
+          </div>
+
+          <p class="caption" style="margin-top: 1.5rem">
+            Quantitative comparison on SateHaze1k, RRSHID, RICE1 and RICE2.
+            S and U denote supervised and unsupervised methods. Among the
+            unsupervised methods, the best result is in red and the second
+            best in blue.
+          </p>
+          <div class="table-card">
+            <table class="results-table">
+              <thead>
+                <tr><th rowspan="2">Methods</th><th colspan="2">SateHaze1k</th><th colspan="2">RRSHID</th><th colspan="2">RICE1</th><th colspan="2">RICE2</th></tr>
+                <tr><th>PSNR&uarr;</th><th>SSIM&uarr;</th><th>PSNR&uarr;</th><th>SSIM&uarr;</th><th>PSNR&uarr;</th><th>SSIM&uarr;</th><th>PSNR&uarr;</th><th>SSIM&uarr;</th></tr>
+              </thead>
+              <tbody>
+                  <tr><td>Diff-HazeNet (S)</td><td>20.43</td><td>0.845</td><td>21.67</td><td>0.649</td><td>31.68</td><td>0.947</td><td>31.18</td><td>0.871</td></tr>
+                  <tr><td>MCAF-Net (S)</td><td>22.99</td><td>0.861</td><td>23.77</td><td>0.665</td><td>31.95</td><td>0.936</td><td>31.84</td><td>0.869</td></tr>
+                  <tr><td>DDLNet (S)</td><td>24.87</td><td>0.969</td><td>24.90</td><td>0.747</td><td>17.09</td><td>0.634</td><td>33.23</td><td>0.900</td></tr>
+                  <tr class="group-start"><td>UCL-Dehaze (U)</td><td>19.55</td><td>0.784</td><td>18.92</td><td>0.489</td><td>26.78</td><td>0.893</td><td class="is-second">24.62</td><td class="is-second">0.798</td></tr>
+                  <tr><td>USID-Net (U)</td><td>19.65</td><td>0.844</td><td>20.36</td><td>0.564</td><td>25.59</td><td>0.876</td><td>23.42</td><td>0.759</td></tr>
+                  <tr><td>DehazeSB (U)</td><td>22.34</td><td class="is-second">0.887</td><td>20.01</td><td>0.527</td><td class="is-second">28.11</td><td class="is-best">0.931</td><td>19.20</td><td>0.742</td></tr>
+                  <tr><td>Cycle-SNSPGAN (U)</td><td>16.47</td><td>0.643</td><td>19.05</td><td>0.535</td><td>24.29</td><td>0.838</td><td>22.47</td><td>0.732</td></tr>
+                  <tr><td>UBRFC-Net (U)</td><td class="is-second">23.05</td><td>0.879</td><td class="is-second">21.05</td><td class="is-second">0.579</td><td>17.83</td><td>0.695</td><td>13.83</td><td>0.603</td></tr>
+                  <tr><td><strong>Ours (U)</strong></td><td class="is-best">24.76</td><td class="is-best">0.894</td><td class="is-best">21.68</td><td class="is-best">0.638</td><td class="is-best">29.55</td><td class="is-second">0.927</td><td class="is-best">27.82</td><td class="is-best">0.832</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section order must match the .tabs-nav order: js/scroll-spy.js walks
+         the sections top to bottom and stops at the first one below its probe. -->
+        <!-- Self-hosted video, embedded the way the RETVI page
+         (graphics.csie.ncku.edu.tw/RETVI) shows its results: a plain
+         <video autoplay controls loop> with a caption underneath. Sound is on:
+         js/page-utils.js plays it unmuted, and falls back to muted until the
+         first click/key/touch if the browser refuses.
+         File lives at assets/live-demo.mp4. -->
+        <section id="live-demo" class="container section spotlight spotlight--soft">
+          <h2>Live Demo</h2>
+          <figure class="media-box--narrow">
+            <video
+              class="demo-video"
+              controls
+              loop
+              playsinline
+              preload="metadata"
+              width="1918"
+              height="904"
+              poster="./assets/live-demo-poster.jpg?v=5"
+              src="./assets/live-demo.mp4?v=4"
+            ></video>
+            <figcaption>HARD-Dehaze running live on a hazy remote sensing image.</figcaption>
+          </figure>
+        </section>
+
+        <section id="video" class="container section spotlight">
+          <h2>Video</h2>
+          <!-- Plain click-to-play embed, the way Nerfies (nerfies.github.io) does
+           it. No autoplay/loop: loop=1 only works together with playlist=,
+           and that turns the player into a playlist, which adds a playlist
+           panel and surfaces other videos. rel=0 keeps the suggestions shown
+           at the end to this channel only. -->
+          <div class="media-box media-box--narrow">
+            <iframe
+              src="https://www.youtube.com/embed/n8ysfo_TfPg?rel=0"
+              title="HARD-Dehaze video"
+              loading="lazy"
+              allow="encrypted-media; picture-in-picture; fullscreen"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </section>
+
+        <section id="code" class="container section">
+          <h2>Code</h2>
+          <p>
+            The source code of HARD-Dehaze is available on
+            <a
+              href="https://github.com/Jenniferduong20012004/HARD-Dehaze"
+              target="_blank"
+              rel="noopener noreferrer"
+              >GitHub</a
+            >.
+          </p>
+        </section>
+
+        <!-- TODO: add assets/pipeline.png, then uncomment this section.
+         Left in as a comment because the file does not exist yet and a live
+         <img> to a missing file renders as a broken-image icon.
+    <section id="system-overview" class="container section">
+      <h2>System Overview</h2>
+      <figure>
+        <img src="./assets/pipeline.png" alt="System pipeline diagram">
+        <figcaption>End-to-end dehazing pipeline.</figcaption>
+      </figure>
+    </section>
+    -->
+
+        <section id="bibtex" class="container section">
+          <h2>BibTeX</h2>
+          <p class="caption">
+            Update with journal, volume, pages and DOI after publication.
+          </p>
+          <div class="bibtex-wrap">
+            <button
+              type="button"
+              class="copy-btn"
+              data-copy-target="bibtex-code"
+              aria-label="Copy BibTeX to clipboard"
+            >
+              Copy
+            </button>
+            <pre class="bibtex"><code id="bibtex-code">@misc{duong2026harddehaze,
+  title  = {Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing},
+  author = {Duong, Thi-Quynh-Nhu and Le, Thi-Ngoc-Hanh},
+  year   = {2026},
+  note   = {Manuscript under review}
+}</code></pre>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container">
+          <!-- Fixed-position, so its place in the DOM only decides its landmark:
+           inside the footer it belongs to contentinfo. -->
+          <a href="#" class="back-to-top" aria-label="Back to top" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5l7 7-1.4 1.4L13 8.8V20h-2V8.8l-4.6 4.6L5 12z" />
+            </svg>
+          </a>
+        </div>
+      </footer>
+    </div>
+    <!-- .page-shell -->
+
+    <script src="./js/compare-slider.js"></script>
+    <script src="./js/loupe-row.js"></script>
+    <script src="./js/smoke-bg.js?v=3"></script>
+    <script src="./js/effects.js"></script>
+    <script src="./js/scroll-spy.js"></script>
+    <script src="./js/lightbox.js?v=2"></script>
+    <script src="./js/page-utils.js?v=8"></script>
+  </body>
+</html>
