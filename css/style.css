@@ -1559,7 +1559,7 @@ html.lightbox-open {
 }
 
 /* ── Banner (first thing under the title) ──
-   Five beats in a row -- hazy input, then Cluster, Route, Grade and Dehaze -- with
+   Five beats in a row, in two phases -- Cluster and Grade (training only), then Input, Route and Dehaze (inference) -- with
    chevrons between them, so the reader gets the claim without reading a
    sentence. Cluster and Grade spend three frames against everyone else's one, which is
    what the 1fr/3fr/1fr/3fr/1fr track list buys: its sub-frames then come out the
@@ -1573,8 +1573,9 @@ html.lightbox-open {
    chevrons below are the marker, so the list's own one is dropped. */
 .banner-flow {
   display: grid;
-  /* Input | Cluster (3 frames) | Route | Grade (3 frames) | Dehaze */
-  grid-template-columns: 1fr 3fr 1fr 3fr 1fr;
+  /* Training: Cluster (3 frames) + Grade (3 frames); then a spacer track for
+     the divider; then Inference: Input | Route | Dehaze. */
+  grid-template-columns: 3fr 3fr 0 1fr 1fr 1fr;
   gap: 2rem;
   max-width: 900px;
   margin: 0 auto;
@@ -1583,6 +1584,7 @@ html.lightbox-open {
 }
 
 .banner-step {
+  position: relative;
   margin: 0;
 }
 
@@ -1739,6 +1741,81 @@ html.lightbox-open {
 .banner-caption strong {
   color: var(--text);
   font-weight: 600;
+}
+
+/* Phases (desktop): the method trains with Cluster and Grade but only runs
+   the generator at test time, so the row is split in two. Each phase gets a
+   bracket label on its first tile's ::before, as wide as the tiles it covers
+   (two equal 3fr tiles + one gap; three 1fr tiles + two gaps), and a dashed
+   divider on Input's ::after, centred in the double gap that the empty
+   spacer track leaves before it. */
+@media (min-width: 701px) {
+  .banner {
+    padding-top: 3.25rem;
+  }
+
+  .banner-step:nth-child(3) {
+    grid-column: 4;
+  }
+
+  .banner-step:nth-child(1)::before,
+  .banner-step:nth-child(3)::before {
+    position: absolute;
+    top: -2.1rem;
+    left: 0;
+    padding-bottom: 0.3rem;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--border);
+    animation: haze-fade-in 0.7s ease-out both;
+    animation-delay: 0.2s;
+  }
+
+  .banner-step:nth-child(1)::before {
+    content: "Training only";
+    width: calc(200% + 2rem);
+    color: var(--muted);
+  }
+
+  .banner-step:nth-child(3)::before {
+    content: "Inference";
+    width: calc(300% + 4rem);
+    color: var(--accent);
+    border-bottom-color: rgba(0, 98, 155, 0.45);
+  }
+
+  .banner-step:nth-child(3)::after {
+    content: "";
+    position: absolute;
+    top: -2.1rem;
+    bottom: 0;
+    left: -2rem;
+    border-left: 2px dashed #c3c9cf;
+    pointer-events: none;
+  }
+
+  /* No arrow into Input (a divider is there instead), and a "+" rather than
+     an arrow between the two training tiles: they are two ingredients of
+     the same training, not a sequence the image travels through. */
+  .banner-flow .banner-step:nth-child(3) .banner-step__frame::before {
+    display: none;
+  }
+
+  .banner-flow .banner-step:nth-child(2) .banner-step__frame::before {
+    content: "+";
+    width: auto;
+    height: auto;
+    margin: 0;
+    border: 0;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--muted);
+  }
 }
 
 /* Phones and narrow tablets: two columns. Reading order is still the flow
