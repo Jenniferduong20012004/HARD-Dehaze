@@ -136,16 +136,20 @@
                   </span>
                   <span class="banner-sub">
                     <img
-                      src="./assets/banner/scores.webp"
+                      src="./assets/banner/scores.webp?v=2"
                       width="227"
                       height="227"
                       loading="lazy"
                       decoding="async"
-                      alt="The score of each cluster: how well the dehazing generator currently handles it"
+                      alt="Schematic: one bar per cluster showing how well the generator handles it; the lowest-scoring clusters receive the most new samples (illustrative values)"
                     />
                   </span>
                 </span>
               </div>
+              <!-- NOTE: Embedding and Clusters are real (DA-CLIP embeddings of the
+               2441 RRSHID thick-fog training images, k-means K=5). Scores is a
+               SCHEMATIC with chosen bar heights, not measured values; replace
+               it with the real s_k of each cluster once available. -->
               <!-- Three names on the same three tracks as the frames above, so each
                word sits under the frame it belongs to and this tile still
                spends exactly one caption line, like its neighbours. -->
