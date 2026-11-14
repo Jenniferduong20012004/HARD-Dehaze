@@ -8,7 +8,7 @@
       name="description"
       content="HARD-Dehaze — Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing — project page."
     />
-    <link rel="stylesheet" href="./css/style.css?v=55" />
+    <link rel="stylesheet" href="./css/style.css?v=58" />
     <!-- Optional: uncomment after acceptance
   <meta property="og:title" content="HARD-Dehaze: Learning What Is Hard: Vision-Language Guided Active Learning for Unpaired Remote Sensing Image Dehazing">
   <meta property="og:description" content="A hardness-aware framework that clusters hazy remote sensing images by degradation, scores each cluster, and spends training on the clusters the model handles worst.">
@@ -103,26 +103,20 @@
           class="container section banner"
           aria-label="What HARD-Dehaze does"
         >
+          <!-- Two phases, because the method has two: Cluster and Grade only
+           exist while training (they decide what the generator sees and how
+           residual haze is penalised); at test time only the dehazing
+           generator runs, so the inference path is Input -> Route -> Dehaze.
+           Hence the "Training only" / "Inference" brackets drawn by CSS over
+           tiles 1-2 and 3-5, a "+" (not an arrow) between the two training
+           tiles, and a dashed divider before Input. -->
           <ol class="banner-flow">
-            <li class="banner-step">
-              <div class="banner-step__frame">
-                <img
-                  src="./assets/banner/hazy.webp"
-                  width="226"
-                  height="226"
-                  alt="A hazy remote sensing image of farmland and roads under a pale veil of haze"
-                />
-              </div>
-              <p class="banner-step__caption">Hazy image</p>
-              <p class="banner-step__verb banner-step__verb--plain">Input</p>
-            </li>
-
             <li class="banner-step banner-step--detect">
               <div class="banner-step__frame banner-step__frame--group">
                 <span class="banner-subs">
                   <span class="banner-sub">
                     <img
-                      src="./assets/banner/embedding.webp"
+                      src="./assets/banner/embedding.webp?v=2"
                       width="226"
                       height="226"
                       loading="lazy"
@@ -132,7 +126,7 @@
                   </span>
                   <span class="banner-sub">
                     <img
-                      src="./assets/banner/clusters.webp"
+                      src="./assets/banner/clusters.webp?v=2"
                       width="230"
                       height="230"
                       loading="lazy"
@@ -142,16 +136,20 @@
                   </span>
                   <span class="banner-sub">
                     <img
-                      src="./assets/banner/scores.webp"
+                      src="./assets/banner/scores.webp?v=2"
                       width="227"
                       height="227"
                       loading="lazy"
                       decoding="async"
-                      alt="The score of each cluster: how well the dehazing generator currently handles it"
+                      alt="Schematic: one bar per cluster showing how well the generator handles it; the lowest-scoring clusters receive the most new samples (illustrative values)"
                     />
                   </span>
                 </span>
               </div>
+              <!-- NOTE: Embedding and Clusters are real (DA-CLIP embeddings of the
+               2441 RRSHID thick-fog training images, k-means K=5). Scores is a
+               SCHEMATIC with chosen bar heights, not measured values; replace
+               it with the real s_k of each cluster once available. -->
               <!-- Three names on the same three tracks as the frames above, so each
                word sits under the frame it belongs to and this tile still
                spends exactly one caption line, like its neighbours. -->
@@ -161,10 +159,70 @@
               <p class="banner-step__verb">Cluster</p>
             </li>
 
+            <li class="banner-step banner-step--detect">
+              <!-- Haze-aware prompt learning (training only): the graded haze sequence
+               the prompt is trained on (the paper's Fig. 14), three of its
+               seven levels, from clean (gamma 0) to hazy (gamma 1). Any
+               training pair will do; it need not be the inference scene.
+               Ringed like Cluster because it is again several frames in one
+               beat. -->
+              <div class="banner-step__frame banner-step__frame--group">
+                <span class="banner-subs">
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-clean.webp?v=2"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The clean image, haze level gamma 0"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-mid.webp?v=2"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The same image with partial haze synthesised by the atmospheric scattering model, gamma 0.35"
+                    />
+                  </span>
+                  <span class="banner-sub">
+                    <img
+                      src="./assets/banner/grade-hazy.webp?v=2"
+                      width="226"
+                      height="226"
+                      loading="lazy"
+                      decoding="async"
+                      alt="The fully hazy image, gamma 1"
+                    />
+                  </span>
+                </span>
+              </div>
+              <p class="banner-step__caption banner-step__caption--split">
+                <span>&gamma;=0</span><span>&gamma;=0.35</span><span>&gamma;=1</span>
+              </p>
+              <p class="banner-step__verb">Grade</p>
+            </li>
+
             <li class="banner-step">
               <div class="banner-step__frame">
                 <img
-                  src="./assets/banner/routing.webp"
+                  src="./assets/banner/hazy.webp?v=3"
+                  width="226"
+                  height="226"
+                  alt="A hazy remote sensing image of farmland and roads under a pale veil of haze"
+                />
+              </div>
+              <p class="banner-step__caption">Hazy image</p>
+              <p class="banner-step__verb banner-step__verb--plain">Input</p>
+            </li>
+
+            <li class="banner-step">
+              <div class="banner-step__frame">
+                <img
+                  src="./assets/banner/routing.webp?v=2"
                   width="230"
                   height="230"
                   loading="lazy"
@@ -179,7 +237,7 @@
             <li class="banner-step">
               <div class="banner-step__frame">
                 <img
-                  src="./assets/banner/output.webp"
+                  src="./assets/banner/output.webp?v=2"
                   width="230"
                   height="230"
                   loading="lazy"
@@ -190,11 +248,13 @@
               <p class="banner-step__caption">Dehazed output</p>
               <p class="banner-step__verb">Dehaze</p>
             </li>
+          
           </ol>
 
           <p class="banner-caption">
-            <strong>HARD-Dehaze</strong> - spend training where the model is
-            weakest: cluster by degradation, score, and grow the hard clusters.
+            <strong>HARD-Dehaze</strong> - training finds the hazy images the model
+            handles worst and grades the haze left behind; at test time only
+            the dehazing generator runs, routing the input to a suited expert.
           </p>
         </section>
 
