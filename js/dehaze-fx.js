@@ -47,23 +47,15 @@
     : { matches: false };
   if (rm.matches) return;
 
-  // DEHAZE button
+  var SVG_ICON =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+
+  // DEHAZE button — starts centered with "Click to Dehaze", pulses
   var btn = document.createElement("button");
-  btn.className = "dehaze-btn is-on";
-  btn.innerHTML =
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>' +
-    " Dehaze";
+  btn.className = "dehaze-btn is-on is-pulse";
+  btn.innerHTML = "Click to Dehaze";
   btn.setAttribute("title", "Click to clear the haze");
   document.body.appendChild(btn);
-
-  // Guide arrow pointing at the button
-  var guide = document.createElement("div");
-  guide.className = "dehaze-guide";
-  guide.setAttribute("aria-hidden", "true");
-  guide.innerHTML =
-    '<span class="dehaze-guide__text">Click to dehaze</span>' +
-    '<span class="dehaze-guide__arrow">↙</span>';
-  document.body.appendChild(guide);
 
   // Full-page haze overlay (starts ON, covers everything)
   var wrap = document.createElement("div");
@@ -110,7 +102,9 @@
     if (firstTime) {
       // First click: sweep the haze away left-to-right
       firstTime = false;
-      guide.classList.add("is-hidden");
+      btn.classList.remove("is-pulse");
+      btn.classList.add("is-corner");
+      btn.innerHTML = SVG_ICON + " Dehaze";
       wrap.classList.remove("is-initial");
 
       var start = performance.now();
