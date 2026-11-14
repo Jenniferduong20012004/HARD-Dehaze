@@ -46,7 +46,7 @@
   const MIN_LIFE = 14; // s
   const MAX_LIFE = 30; // s
   const PEAK_ALPHA = 0.55;
-  const SMOKE_RGB = "122, 132, 145"; // cool mid gray: reads on white and on navy
+  const SMOKE_RGB = "180, 200, 220"; // lighter cool gray: visible on dark bg
   const SPRITE_SIZE = 256;
 
   // Pointer interaction.

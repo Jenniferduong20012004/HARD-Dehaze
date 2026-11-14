@@ -6,12 +6,12 @@ html {
 }
 
 :root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --text: #1a1a1a;
-  --muted: #5c5c5c;
-  --accent: #00629b;
-  --border: #e0e0e0;
+  --bg: #0c1320;
+  --surface: #141e2e;
+  --text: #dce4ec;
+  --muted: #7e91a5;
+  --accent: #4ecdc4;
+  --border: #243040;
   --radius: 8px;
   --max-width: 900px;
   /* Shared by every result tile on the page. The Qualitative Comparison row is
@@ -148,11 +148,11 @@ main p a:not(.btn):hover {
      scrolling underneath show through it softly. Where backdrop-filter is
      unsupported the second declaration is skipped and it stays the opaque
      grey it always was. */
-  background: linear-gradient(to bottom, #ececec, #e2e2e2);
+  background: linear-gradient(to bottom, #1a2535, #141e2e);
   background: linear-gradient(
     to bottom,
-    rgba(240, 242, 244, 0.78),
-    rgba(226, 229, 232, 0.72)
+    rgba(26, 37, 53, 0.85),
+    rgba(20, 30, 46, 0.8)
   );
   -webkit-backdrop-filter: blur(12px) saturate(1.5);
   backdrop-filter: blur(12px) saturate(1.5);
@@ -223,7 +223,7 @@ main p a:not(.btn):hover {
   width: 1px;
   height: 1.4rem;
   margin-inline: 0.35rem;
-  background: #b5b9bd;
+  background: #3a4a5a;
   filter: none !important;
 }
 
@@ -232,8 +232,8 @@ main p a:not(.btn):hover {
   align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 1.15rem 0.45rem 0.95rem;
-  background: linear-gradient(to bottom, #c2c6ca 0%, #9aa0a6 100%);
-  color: #fff;
+  background: linear-gradient(to bottom, #2a3a4e 0%, #1e2d40 100%);
+  color: #b0bfcf;
   font-size: 0.74rem;
   font-weight: 600;
   line-height: 1.3;
@@ -247,7 +247,7 @@ main p a:not(.btn):hover {
 
 /* Resource tabs: light face, accent text and icon. */
 .tabs-nav a.tabs-nav__res {
-  background: linear-gradient(to bottom, #ffffff, #e9eef2);
+  background: linear-gradient(to bottom, #1c2e42, #162538);
   color: var(--accent);
   text-shadow: none;
 }
@@ -263,10 +263,10 @@ main p a:not(.btn):hover {
 .tabs-nav a:focus-visible,
 .tabs-nav a.tabs-nav__res:hover,
 .tabs-nav a.tabs-nav__res:focus-visible {
-  background: linear-gradient(to bottom, #1f7fb8, var(--accent));
-  color: #fff;
+  background: linear-gradient(to bottom, var(--accent), #3ab5ad);
+  color: #0c1320;
   text-decoration: none;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  text-shadow: none;
 }
 
 /* Current section, set by js/scroll-spy.js as the reader scrolls. Same
@@ -274,8 +274,8 @@ main p a:not(.btn):hover {
    the pointer is elsewhere. */
 .tabs-nav a.is-active,
 .tabs-nav a.tabs-nav__res.is-active {
-  background: linear-gradient(to bottom, #1f7fb8, var(--accent));
-  color: #fff;
+  background: linear-gradient(to bottom, var(--accent), #3ab5ad);
+  color: #0c1320;
   font-weight: 800;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }
@@ -491,8 +491,8 @@ h2 {
    section is a window onto the page itself: the very same background and
    the very same smoke from js/smoke-bg.js, panel edge to panel edge. */
 :root {
-  --haze-bg: #0c1724;
-  --haze-bg-soft: #d2d7dd;
+  --haze-bg: #060d18;
+  --haze-bg-soft: #0a1525;
 }
 
 .spotlight {
@@ -603,7 +603,7 @@ figure img {
   height: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #eee;
+  background: #1a2535;
 }
 
 figcaption {
@@ -683,7 +683,7 @@ figcaption {
 /* Blank-row gap in the source table, between supervised and unsupervised
    method groups, becomes a rule since the page doesn't render empty rows. */
 .results-table tr.group-start td {
-  border-top: 2px solid #c2c2c2;
+  border-top: 2px solid #3a4a5a;
 }
 
 .results-table tbody tr:last-child td {
@@ -796,7 +796,7 @@ figcaption {
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.5;
-  background: #f0f0f0;
+  background: #0e1a28;
   border: 1px solid var(--border);
   border-radius: var(--radius);
 }
@@ -861,7 +861,7 @@ figcaption {
 
 .back-to-top:hover,
 .back-to-top:focus-visible {
-  background: #1f7fb8;
+  background: #3ab5ad;
   text-decoration: none;
 }
 
@@ -1125,7 +1125,7 @@ html.lightbox-open {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #111;
+  background: #0e1a28;
   cursor: col-resize;
   touch-action: none;
   aspect-ratio: 16 / 9;
@@ -1335,8 +1335,8 @@ html.lightbox-open {
   z-index: 3;
   opacity: 0;
   transition: opacity 0.12s ease;
-  background: #111;
-  box-shadow: 0 0 0 2px #fff, 0 3px 12px rgba(0, 0, 0, 0.5);
+  background: #0e1a28;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.7), 0 3px 12px rgba(0, 0, 0, 0.5);
 }
 
 .compare.has-loupe .compare__loupe {
@@ -1448,7 +1448,7 @@ html.lightbox-open {
   aspect-ratio: 1 / 1;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #111;
+  background: #0e1a28;
   /* The one zero-motion cue that works for everyone, reduced-motion readers
      included: the pointer itself says the tile magnifies. */
   cursor: zoom-in;
@@ -1460,13 +1460,13 @@ html.lightbox-open {
    Ours is the accent. Hardcoded rather than tokens: they are a pair, and
    the amber has no other use on the page. */
 .zoom-fig--sota {
-  --hl: #c26a00;
-  --hl-bg: #fdf0dc;
+  --hl: #e8a545;
+  --hl-bg: rgba(194, 106, 0, 0.18);
 }
 
 .zoom-fig--ours {
   --hl: var(--accent);
-  --hl-bg: #dcecf7;
+  --hl-bg: rgba(78, 205, 196, 0.15);
 }
 
 .zoom-fig--sota figcaption,
@@ -1591,7 +1591,7 @@ html.lightbox-open {
 .banner-step__frame {
   position: relative;
   aspect-ratio: 1 / 1;
-  background: #111;
+  background: #0e1a28;
   border: 1px solid var(--border);
   border-radius: 6px;
 }
@@ -1624,7 +1624,7 @@ html.lightbox-open {
   content: "";
   position: absolute;
   inset: -7px;
-  border: 2px dashed rgba(0, 98, 155, 0.7);
+  border: 2px dashed rgba(78, 205, 196, 0.45);
   border-radius: 10px;
   pointer-events: none;
 }
@@ -1632,7 +1632,7 @@ html.lightbox-open {
 .banner-sub {
   display: block;
   aspect-ratio: 1 / 1;
-  background: #111;
+  background: #0e1a28;
   border: 1px solid var(--border);
   border-radius: 6px;
 }
@@ -1963,8 +1963,8 @@ html.lightbox-open {
   z-index: 1000;
   transform: scaleX(0);
   transform-origin: 0 50%;
-  background: linear-gradient(90deg, var(--accent), #5fb3e0);
-  box-shadow: 0 0 8px rgba(0, 98, 155, 0.45);
+  background: linear-gradient(90deg, var(--accent), #6dd5ed);
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.45);
   pointer-events: none;
   will-change: transform;
 }
@@ -2070,11 +2070,11 @@ html.lightbox-open {
 .banner-step__frame:not(.banner-step__frame--group) img:hover,
 .banner-sub img:hover {
   transform: translateY(-4px);
-  box-shadow: 0 14px 30px -12px rgba(0, 98, 155, 0.45);
+  box-shadow: 0 14px 30px -12px rgba(78, 205, 196, 0.35);
 }
 
 .figure img:hover {
-  border-color: rgba(0, 98, 155, 0.45);
+  border-color: rgba(78, 205, 196, 0.45);
 }
 
 /* Table rows light up under the pointer. */
@@ -2083,7 +2083,7 @@ html.lightbox-open {
 }
 
 .results-table tbody tr:hover td {
-  background: rgba(0, 98, 155, 0.08);
+  background: rgba(78, 205, 196, 0.08);
 }
 
 /* Comparison grid: the row under the pointer stays sharp and lifted, the
@@ -2096,7 +2096,7 @@ html.lightbox-open {
 }
 
 .qual-row.is-hot .qual-item img {
-  box-shadow: 0 4px 14px -4px rgba(0, 98, 155, 0.5);
+  box-shadow: 0 4px 14px -4px rgba(78, 205, 196, 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2131,5 +2131,148 @@ html.lightbox-open {
   .banner-step__frame:not(.banner-step__frame--group) img:hover,
   .banner-sub img:hover {
     transform: none;
+  }
+}
+
+/* ── Dehaze effects (js/dehaze-fx.js) ──────────────────────────────────────── */
+
+/* 1. Title dehaze: each word starts fogged and sharpens left to right. */
+.dh-word {
+  display: inline-block;
+  animation: dh-clear 1.3s ease-out both;
+  animation-delay: calc(0.15s + var(--wi) * 0.1s);
+}
+
+@keyframes dh-clear {
+  0% {
+    opacity: 0.06;
+    filter: blur(14px);
+    transform: scale(1.04);
+  }
+  55% {
+    opacity: 0.5;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* 2. Cursor dehaze: a fog overlay on the banner clears around the pointer,
+   like hovering dehazes the images in real time. Fades in after the banner's
+   own haze-clear intro animation finishes (~3 s). */
+.banner {
+  position: relative;
+}
+
+.dehaze-cursor {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(12, 19, 32, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  border-radius: inherit;
+  opacity: 0;
+  animation: dehaze-in 1.2s ease 3.2s forwards;
+  -webkit-mask-image: radial-gradient(
+    circle 120px at var(--cx, -200px) var(--cy, -200px),
+    transparent 30%,
+    rgba(0, 0, 0, 0.55) 60%,
+    black 100%
+  );
+  mask-image: radial-gradient(
+    circle 120px at var(--cx, -200px) var(--cy, -200px),
+    transparent 30%,
+    rgba(0, 0, 0, 0.55) 60%,
+    black 100%
+  );
+}
+
+@keyframes dehaze-in {
+  to {
+    opacity: 1;
+  }
+}
+
+/* 3. Fog wisps: thin horizontal streaks of fog drifting across the page,
+   complementing the vertical smoke puffs from smoke-bg.js. */
+.fog-wisps {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.fog-wisp {
+  position: absolute;
+  left: 0;
+  width: 55%;
+  height: calc(16px + var(--fi) * 7px);
+  top: calc(8% + var(--fi) * 15%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(180, 200, 220, 0.035) 20%,
+    rgba(180, 200, 220, 0.06) 50%,
+    rgba(180, 200, 220, 0.035) 80%,
+    transparent
+  );
+  filter: blur(12px);
+  animation: wisp-lr calc(24s + var(--fi) * 6s) ease-in-out infinite;
+  animation-delay: calc(var(--fi) * -5s);
+}
+
+.fog-wisp:nth-child(even) {
+  animation-name: wisp-rl;
+  width: 45%;
+}
+
+@keyframes wisp-lr {
+  0% {
+    transform: translateX(-110%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(200%);
+    opacity: 0;
+  }
+}
+
+@keyframes wisp-rl {
+  0% {
+    transform: translateX(280%);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-130%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dh-word {
+    animation: none;
+  }
+
+  .dehaze-cursor,
+  .fog-wisps {
+    display: none;
   }
 }
